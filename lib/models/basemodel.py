@@ -271,7 +271,7 @@ class BaseModel():
                 self.gt_labels[i*self.opt.batchsize : i*self.opt.batchsize+error.size(0)] = self.gt.reshape(error.size(0))
                 self.latent_i [i*self.opt.batchsize : i*self.opt.batchsize+error.size(0), :] = latent_i.reshape(error.size(0), self.opt.nz)
                 self.latent_o [i*self.opt.batchsize : i*self.opt.batchsize+error.size(0), :] = latent_o.reshape(error.size(0), self.opt.nz)
-
+                print("an_scores:", str(self.an_scores), "gt_labels:", str(self.gt_labels))
                 self.times.append(time_o - time_i)
 
                 # Save test images.

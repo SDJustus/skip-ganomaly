@@ -23,6 +23,7 @@ from lib.visualizer import Visualizer
 from lib.loss import l2_loss
 from lib.evaluate import roc
 from lib.models.basemodel import BaseModel
+#import wandb
 
 
 
@@ -80,7 +81,7 @@ class Skipganomaly(BaseModel):
         if self.opt.isTrain:
             self.netg.train()
             self.netd.train()
-            self.optimizers  = []
+            self.optimizers = []
             self.optimizer_d = optim.Adam(self.netd.parameters(), lr=self.opt.lr, betas=(self.opt.beta1, 0.999))
             self.optimizer_g = optim.Adam(self.netg.parameters(), lr=self.opt.lr, betas=(self.opt.beta1, 0.999))
             self.optimizers.append(self.optimizer_d)
@@ -146,9 +147,16 @@ class Skipganomaly(BaseModel):
         self.forward()
         self.update_netg()
         self.update_netd()
+        #wandb.log({
+        #    "err_g_adv": self.err_g_adv,
+        #    "err_g_con": self.err_g_con,
+        #    "err_g_lat": self.err_g_lat,
+        #    "err_g": self.err_g,
+        #    "err_d": self.err_d
+        #    })
 
     ##
-    def test(self, plot_hist=False):
+    def test(self, plot_hist=True):
         """ Test GANomaly model.
 
         Args:
@@ -157,6 +165,7 @@ class Skipganomaly(BaseModel):
         Raises:
             IOError: Model weights not found.
         """
+        self.netg.eval()
         with torch.no_grad():
             # Load the weights of netg and netd.
             if self.opt.load_weights:
@@ -208,8 +217,8 @@ class Skipganomaly(BaseModel):
                     dst = os.path.join(self.opt.outf, self.opt.name, 'test', 'images')
                     if not os.path.isdir(dst): os.makedirs(dst)
                     real, fake, _ = self.get_current_images()
-                    vutils.save_image(real, '%s/real_%03d.eps' % (dst, i+1), normalize=True)
-                    vutils.save_image(fake, '%s/fake_%03d.eps' % (dst, i+1), normalize=True)
+                    vutils.save_image(real, '%s/real_%03d.png' % (dst, i+1), normalize=True)
+                    vutils.save_image(fake, '%s/fake_%03d.png' % (dst, i+1), normalize=True)
 
             # Measure inference time.
             self.times = np.array(self.times)
@@ -226,8 +235,8 @@ class Skipganomaly(BaseModel):
             if plot_hist:
                 plt.ion()
                 # Create data frame for scores and labels.
-                scores['scores'] = self.an_scores
-                scores['labels'] = self.gt_labels
+                scores['scores'] = self.an_scores.cpu()
+                scores['labels'] = self.gt_labels.cpu()
                 hist = pd.DataFrame.from_dict(scores)
                 hist.to_csv("histogram.csv")
 

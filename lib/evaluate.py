@@ -8,7 +8,8 @@ Returns:
 ##
 # LIBRARIES
 from __future__ import print_function
-
+import matplotlib
+matplotlib.use('Agg')
 import os
 from sklearn.metrics import roc_curve, auc, average_precision_score, f1_score
 from scipy.optimize import brentq
@@ -16,7 +17,7 @@ from scipy.interpolate import interp1d
 import matplotlib.pyplot as plt
 from matplotlib import rc
 rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
-rc('text', usetex=True)
+rc('text', usetex=False)
 
 def evaluate(labels, scores, metric='roc'):
     if metric == 'roc':
@@ -32,7 +33,7 @@ def evaluate(labels, scores, metric='roc'):
         raise NotImplementedError("Check the evaluation metric.")
 
 ##
-def roc(labels, scores, saveto=None):
+def roc(labels, scores, saveto=True):
     """Compute ROC curve and ROC area for each class"""
     fpr = dict()
     tpr = dict()
@@ -40,7 +41,8 @@ def roc(labels, scores, saveto=None):
 
     labels = labels.cpu()
     scores = scores.cpu()
-
+    #labels = labels - 1
+    #print(labels)
     # True/False Positive Rates.
     fpr, tpr, _ = roc_curve(labels, scores)
     roc_auc = auc(fpr, tpr)
@@ -60,7 +62,7 @@ def roc(labels, scores, saveto=None):
         plt.ylabel('True Positive Rate')
         plt.title('Receiver operating characteristic')
         plt.legend(loc="lower right")
-        plt.savefig(os.path.join(saveto, "ROC.pdf"))
+        plt.savefig("ROC.png")
         plt.close()
 
     return roc_auc
