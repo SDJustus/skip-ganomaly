@@ -94,7 +94,7 @@ if __name__ == '__main__':
     normal_images = []
     abnormal_images = []
     for path in [normal_images_path, abnormal_images_path]:
-        file_path = [os.path.join(path, o) for o in os.listdir(path) if (".png" in o | ".jpg" in o | ".bmp" in o)]
+        file_path = [os.path.join(path, o) for o in os.listdir(path) if (".png" in o or ".jpg" in o or ".bmp" in o)]
         for file in file_path:
             image = cv2.imread(file)
             if "normal" in path:
