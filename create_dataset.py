@@ -10,6 +10,8 @@ import argparse
 
 
 def generate_skip_ganomaly_dataset(train_normal, test_normal, test_abnormal, dataset_name, img_shape=(128,128)):
+    if not os.path.isdir(os.path.join("data")):
+         os.mkdir(os.path.join("data"))
     if not os.path.isdir(os.path.join("data", dataset_name)):
          os.mkdir(os.path.join("data", dataset_name))
     for folder in ["train", "test"]:
