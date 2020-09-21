@@ -14,6 +14,8 @@ def generate_skip_ganomaly_dataset(train_normal, test_normal, test_abnormal, dat
          os.mkdir(os.path.join("data"))
     if not os.path.isdir(os.path.join("data", dataset_name)):
          os.mkdir(os.path.join("data", dataset_name))
+    else:
+        raise ValueError("The Dataset_name {} already exists. Please choose another name or delete the existing one.".format(dataset_name))
     for folder in ["train", "test"]:
         if not os.path.isdir(os.path.join("data", dataset_name, folder)):
             os.mkdir(os.path.join("data", dataset_name, folder))
