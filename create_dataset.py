@@ -80,7 +80,7 @@ if __name__ == '__main__':
                         required=True)
     parser.add_argument("-aip","--abnormal_images_path", action="store", help="absolute path to images with defect(dont use backslash, use normal slash instead)",
                         required=True)
-    parser.add_argument("-is", "--image_size", action="store", help="wanted size of images. Will be quadratic so just wirte a single number for in pixel", defaut="256")
+    parser.add_argument("-is", "--image_size", action="store", help="wanted size of images. Will be quadratic so just wirte a single number for in pixel", default="256")
     parser.add_argument("-dn", "--dataset_name", action="store", help="name of the resulting dataset", default="custom_dataset")
     parser.add_argument("-aug", "--augment", action="store_true", help="determine if the images should be augmented")
     parser.add_argument("-r", "--rotate", action="store_true", help="determine if the images should be rotated by 90 degrees")
@@ -132,5 +132,6 @@ if __name__ == '__main__':
     np.random.shuffle(test_normal)
     np.random.shuffle(abnormal_images)
 
-    generate_skip_ganomaly_dataset(train_normal, test_normal, abnormal_images, args.dataset_name, (int(args.image_size),int(args.image_size)))
+    generate_skip_ganomaly_dataset(train_normal, test_normal, abnormal_images, args.dataset_name,
+                                   (int(args.image_size),int(args.image_size)))
 
