@@ -87,6 +87,7 @@ if __name__ == '__main__':
     parser.add_argument("-s", "--standardize", action="store_true", help="determine if the images should be locally standardized")
 
     args = parser.parse_args()
+    img_shape=(int(args.image_size),int(args.image_size))
     normal_images_path = os.path.abspath(args.normal_images_path)
     abnormal_images_path = os.path.abspath(args.abnormal_images_path)
     print("Trying to get all images from {0} as normal images and images from {1} as abnormal images!"
@@ -98,6 +99,7 @@ if __name__ == '__main__':
         file_path = [os.path.join(path, o) for o in os.listdir(path) if (".png" in o or ".jpg" in o or ".bmp" in o)]
         for file in file_path:
             image = cv2.imread(file)
+            image = cv2.resize(image, img_shape)
             if normal_run:
                 normal_images.append(image)
             else:
@@ -135,5 +137,5 @@ if __name__ == '__main__':
     np.random.shuffle(abnormal_images)
 
     generate_skip_ganomaly_dataset(train_normal, test_normal, abnormal_images, args.dataset_name,
-                                   (int(args.image_size),int(args.image_size)))
+                                   img_shape)
 
