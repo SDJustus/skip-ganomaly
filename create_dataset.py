@@ -93,14 +93,16 @@ if __name__ == '__main__':
           .format(str(normal_images_path), str(abnormal_images_path)))
     normal_images = []
     abnormal_images = []
+    normal_run=True
     for path in [normal_images_path, abnormal_images_path]:
         file_path = [os.path.join(path, o) for o in os.listdir(path) if (".png" in o or ".jpg" in o or ".bmp" in o)]
         for file in file_path:
             image = cv2.imread(file)
-            if "normal" in path:
+            if normal_run:
                 normal_images.append(image)
             else:
                 abnormal_images.append(image)
+        normal_run=False
     print("Collected {0} normal images and {1} abnormal images!".format(str(len(normal_images)),
                                                                         str(len(abnormal_images))))
     if args.standardize:
