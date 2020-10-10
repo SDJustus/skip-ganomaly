@@ -234,10 +234,11 @@ class Skipganomaly(BaseModel):
             threshold = 0.20
             scores["scores"] = self.an_scores.cpu()
             scores["labels"] = self.gt_labels.cpu()
-            print(scores)
+
             scores["scores"][scores["scores"] >= threshold] = 1
             scores["scores"][scores["scores"] < threshold] = 0
-            precision, recall, f1_score, support = precision_recall_fscore_support(scores["lables"], scores["scores"])
+            print(scores)
+            precision, recall, f1_score, support = precision_recall_fscore_support(scores["labels"], scores["scores"])
             conf_matrix = confusion_matrix(scores["labels"], scores["scores"])
             performance = OrderedDict([('Avg Run Time (ms/batch)', self.times), ('AUC', auc), ('precision', precision),
                                        ("recall", recall), ("F1_Score", f1_score), ("support", support),
