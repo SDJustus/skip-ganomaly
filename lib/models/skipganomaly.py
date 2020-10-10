@@ -248,6 +248,9 @@ class Skipganomaly(BaseModel):
             if True:
                 plt.ion()
                 # Create data frame for scores and labels.
+                scores["scores"] = self.an_scores.cpu()
+                scores["labels"] = self.gt_labels.cpu()
+                
                 hist = pd.DataFrame.from_dict(scores)
                 hist.to_csv("histogram.csv")
 
