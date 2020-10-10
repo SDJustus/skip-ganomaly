@@ -234,6 +234,7 @@ class Skipganomaly(BaseModel):
             threshold = 0.20
             scores["scores"] = self.an_scores.cpu()
             scores["labels"] = self.gt_labels.cpu()
+            print(scores)
             scores["scores"][scores["scores"] >= threshold] = 1
             scores["scores"][scores["scores"] < threshold] = 0
             precision, recall, f1_score, support = precision_recall_fscore_support(scores["lables"], scores["scores"])
@@ -250,7 +251,7 @@ class Skipganomaly(BaseModel):
                 # Create data frame for scores and labels.
                 scores["scores"] = self.an_scores.cpu()
                 scores["labels"] = self.gt_labels.cpu()
-                
+
                 hist = pd.DataFrame.from_dict(scores)
                 hist.to_csv("histogram.csv")
 
