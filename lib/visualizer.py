@@ -153,7 +153,7 @@ class Visualizer():
             best ([int]): Best performance.
         """
         message = '   '
-        print(performance)
+        #print(performance)
         for key, val in performance.items():
             message += '%s: %.3f ' % (key, val)
         message += 'max AUC: %.3f' % best

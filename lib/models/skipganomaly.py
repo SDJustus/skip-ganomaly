@@ -237,7 +237,7 @@ class Skipganomaly(BaseModel):
 
             scores["scores"][scores["scores"] >= threshold] = 1
             scores["scores"][scores["scores"] < threshold] = 0
-            print(scores)
+            #print(scores)
             precision, recall, f1_score, support = precision_recall_fscore_support(scores["labels"], scores["scores"],
                                                                                    average="binary")
             conf_matrix = confusion_matrix(scores["labels"], scores["scores"])
