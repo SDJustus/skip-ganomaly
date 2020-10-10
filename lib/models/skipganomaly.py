@@ -242,7 +242,8 @@ class Skipganomaly(BaseModel):
                                                                                    average="binary")
             conf_matrix = confusion_matrix(scores["labels"], scores["scores"])
             performance = OrderedDict([('Avg Run Time (ms/batch)', self.times), ('AUC', auc), ('precision', precision),
-                                       ("recall", recall), ("F1_Score", f1_score), ("support", support)
+                                       ("recall", recall), ("F1_Score", f1_score)
+                                          #, ("support", support)
                                         # , ("conf_matrix", conf_matrix)
                                        ])
             print("Confusion Matrix: " + str(conf_matrix))
