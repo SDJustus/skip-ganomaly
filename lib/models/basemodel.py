@@ -180,6 +180,7 @@ class BaseModel():
         """
 
         self.netg.train()
+        self.netd.train()
         epoch_iter = 0
         for data in tqdm(self.data.train, leave=False, total=len(self.data.train)):
             self.total_steps += self.opt.batchsize

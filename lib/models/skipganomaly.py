@@ -23,6 +23,7 @@ from lib.visualizer import Visualizer
 from lib.loss import l2_loss
 from lib.evaluate import roc
 from lib.models.basemodel import BaseModel
+from sklearn.metrics import precision_recall_fscore_support, confusion_matrix
 #import wandb
 
 
@@ -166,6 +167,7 @@ class Skipganomaly(BaseModel):
             IOError: Model weights not found.
         """
         self.netg.eval()
+        self.netd.eval()
         with torch.no_grad():
             # Load the weights of netg and netd.
             if self.opt.load_weights:
@@ -228,15 +230,24 @@ class Skipganomaly(BaseModel):
             self.an_scores = (self.an_scores - torch.min(self.an_scores)) / \
                              (torch.max(self.an_scores) - torch.min(self.an_scores))
             auc = roc(self.gt_labels, self.an_scores)
-            performance = OrderedDict([('Avg Run Time (ms/batch)', self.times), ('AUC', auc)])
+
+            threshold = 0.20
+            scores["scores"] = self.an_scores.cpu()
+            scores["labels"] = self.gt_labels.cpu()
+            scores[scores >= threshold] = 1
+            scores[scores < threshold] = 0
+            precision, recall, f1_score, support = precision_recall_fscore_support(scores["lables"], scores["scores"])
+            conf_matrix = confusion_matrix(scores["labels"], scores["scores"])
+            performance = OrderedDict([('Avg Run Time (ms/batch)', self.times), ('AUC', auc), ('precision', precision),
+                                       ("recall", recall), ("F1_Score", f1_score), ("support", support),
+                                       ("conf_matrix", conf_matrix)])
+
 
             ##
             # PLOT HISTOGRAM
-            if plot_hist:
+            if True:
                 plt.ion()
                 # Create data frame for scores and labels.
-                scores['scores'] = self.an_scores.cpu()
-                scores['labels'] = self.gt_labels.cpu()
                 hist = pd.DataFrame.from_dict(scores)
                 hist.to_csv("histogram.csv")
 
