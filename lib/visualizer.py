@@ -155,7 +155,10 @@ class Visualizer():
         message = '   '
         #print(performance)
         for key, val in performance.items():
-            message += '%s: %.3f ' % (key, val)
+            if key == "conf_matrix":
+                message += '%s: %s ' % (key, val)
+            else:
+                message += '%s: %.3f ' % (key, val)
         message += 'max AUC: %.3f' % best
 
         print(message)

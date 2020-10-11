@@ -229,9 +229,9 @@ class Skipganomaly(BaseModel):
             # Scale error vector between [0, 1]
             self.an_scores = (self.an_scores - torch.min(self.an_scores)) / \
                              (torch.max(self.an_scores) - torch.min(self.an_scores))
-            auc = roc(self.gt_labels, self.an_scores, output_directory=self.opt.outf, epoch=self.epoch)
+            auc, threshold = roc(self.gt_labels, self.an_scores, output_directory=self.opt.outf, epoch=self.epoch)
 
-            threshold = 0.20
+
             scores["scores"] = self.an_scores.cpu()
             scores["labels"] = self.gt_labels.cpu()
 
@@ -242,11 +242,12 @@ class Skipganomaly(BaseModel):
                                                                                    average="binary")
             conf_matrix = confusion_matrix(scores["labels"], scores["scores"])
             performance = OrderedDict([('Avg Run Time (ms/batch)', self.times), ('AUC', auc), ('precision', precision),
-                                       ("recall", recall), ("F1_Score", f1_score)
+                                       ("recall", recall), ("F1_Score", f1_score), ("conf_matrix", conf_matrix),
+                                       ("threshold", threshold)
                                           #, ("support", support)
                                         # , ("conf_matrix", conf_matrix)
                                        ])
-            print("Confusion Matrix: " + str(conf_matrix))
+
 
 
             ##

@@ -194,7 +194,7 @@ class Ganomaly(BaseModel):
 
             # Scale error vector between [0, 1]
             self.an_scores = (self.an_scores - torch.min(self.an_scores)) / (torch.max(self.an_scores) - torch.min(self.an_scores))
-            auc = evaluate(self.gt_labels, self.an_scores, metric=self.opt.metric)
+            auc, threshold = evaluate(self.gt_labels, self.an_scores, metric=self.opt.metric)
             performance = OrderedDict([('Avg Run Time (ms/batch)', self.times), ('AUC', auc)])
 
             if self.opt.display_id > 0 and self.opt.phase == 'test':

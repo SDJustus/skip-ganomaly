@@ -44,7 +44,7 @@ def roc(labels, scores, saveto=True, output_directory="./", epoch = 0):
     #labels = labels - 1
     #print(labels)
     # True/False Positive Rates.
-    fpr, tpr, _ = roc_curve(labels, scores)
+    fpr, tpr, threshold = roc_curve(labels, scores)
     roc_auc = auc(fpr, tpr)
 
     # Equal Error Rate
@@ -65,7 +65,7 @@ def roc(labels, scores, saveto=True, output_directory="./", epoch = 0):
         plt.savefig(output_directory + "/ROC" + str(epoch) + ".png")
         plt.close()
 
-    return roc_auc
+    return roc_auc, threshold
 
 def auprc(labels, scores):
     ap = average_precision_score(labels, scores)
