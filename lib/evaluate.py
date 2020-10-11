@@ -16,6 +16,8 @@ from scipy.optimize import brentq
 from scipy.interpolate import interp1d
 import matplotlib.pyplot as plt
 from matplotlib import rc
+import numpy as np
+import pandas as pd
 rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 rc('text', usetex=False)
 
@@ -44,9 +46,16 @@ def roc(labels, scores, saveto=True, output_directory="./", epoch = 0):
     #labels = labels - 1
     #print(labels)
     # True/False Positive Rates.
-    fpr, tpr, threshold = roc_curve(labels, scores)
+    fpr, tpr, t = roc_curve(labels, scores)
     roc_auc = auc(fpr, tpr)
 
+    #threshold
+    i = np.arange(len(tpr))
+    roc = pd.DataFrame({'tf': pd.Series(tpr - (1 - fpr), index=i), 'threshold': pd.Series(t, index=i)})
+    roc_t = roc.iloc[(roc.tf - 0).abs().argsort()[:1]]
+    print(roc_t['threshold'])
+    threshold = roc_t['threshold']
+    print(threshold)
     # Equal Error Rate
     eer = brentq(lambda x: 1. - x - interp1d(fpr, tpr)(x), 0., 1.)
 
