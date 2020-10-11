@@ -229,7 +229,7 @@ class Skipganomaly(BaseModel):
             # Scale error vector between [0, 1]
             self.an_scores = (self.an_scores - torch.min(self.an_scores)) / \
                              (torch.max(self.an_scores) - torch.min(self.an_scores))
-            auc = roc(self.gt_labels, self.an_scores)
+            auc = roc(self.gt_labels, self.an_scores, output_directory=self.opt.outf, epoch=self.epoch)
 
             threshold = 0.20
             scores["scores"] = self.an_scores.cpu()
@@ -258,7 +258,7 @@ class Skipganomaly(BaseModel):
                 scores["labels"] = self.gt_labels.cpu()
 
                 hist = pd.DataFrame.from_dict(scores)
-                hist.to_csv("histogram.csv")
+                hist.to_csv(+self.opt.outf + "/histogram" + str(self.epoch) + ".csv")
 
                 # Filter normal and abnormal scores.
                 abn_scr = hist.loc[hist.labels == 1]['scores']

@@ -19,9 +19,9 @@ from matplotlib import rc
 rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 rc('text', usetex=False)
 
-def evaluate(labels, scores, metric='roc'):
+def evaluate(labels, scores, metric='roc', output_directory="./", epoch=0):
     if metric == 'roc':
-        return roc(labels, scores)
+        return roc(labels, scores, output_directory=output_directory, epoch=epoch)
     elif metric == 'auprc':
         return auprc(labels, scores)
     elif metric == 'f1_score':
@@ -33,7 +33,7 @@ def evaluate(labels, scores, metric='roc'):
         raise NotImplementedError("Check the evaluation metric.")
 
 ##
-def roc(labels, scores, saveto=True):
+def roc(labels, scores, saveto=True, output_directory="./", epoch = 0):
     """Compute ROC curve and ROC area for each class"""
     fpr = dict()
     tpr = dict()
@@ -62,7 +62,7 @@ def roc(labels, scores, saveto=True):
         plt.ylabel('True Positive Rate')
         plt.title('Receiver operating characteristic')
         plt.legend(loc="lower right")
-        plt.savefig("ROC.png")
+        plt.savefig(output_directory + "/ROC" + str(epoch) + ".png")
         plt.close()
 
     return roc_auc
