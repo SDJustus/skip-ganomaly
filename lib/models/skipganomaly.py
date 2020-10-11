@@ -258,7 +258,7 @@ class Skipganomaly(BaseModel):
                 scores["labels"] = self.gt_labels.cpu()
 
                 hist = pd.DataFrame.from_dict(scores)
-                hist.to_csv(+self.opt.outf + "/histogram" + str(self.epoch) + ".csv")
+                hist.to_csv(self.opt.outf + "/histogram" + str(self.epoch) + ".csv")
 
                 # Filter normal and abnormal scores.
                 abn_scr = hist.loc[hist.labels == 1]['scores']
