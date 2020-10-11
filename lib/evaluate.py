@@ -56,6 +56,7 @@ def roc(labels, scores, saveto=True, output_directory="./", epoch = 0):
     print(roc_t['threshold'])
     threshold = roc_t['threshold']
     print(list(threshold))
+    print(list(threshold)[0])
     # Equal Error Rate
     eer = brentq(lambda x: 1. - x - interp1d(fpr, tpr)(x), 0., 1.)
 
