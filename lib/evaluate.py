@@ -43,8 +43,6 @@ def roc(labels, scores, saveto=True, output_directory="./", epoch = 0):
 
     labels = labels.cpu()
     scores = scores.cpu()
-    print(labels)
-    print(scores)
     #labels = labels - 1
     #print(labels)
     # True/False Positive Rates.
@@ -55,7 +53,6 @@ def roc(labels, scores, saveto=True, output_directory="./", epoch = 0):
     i = np.arange(len(tpr))
     roc = pd.DataFrame({'tf': pd.Series(tpr - (1 - fpr), index=i), 'threshold': pd.Series(t, index=i)})
     roc_t = roc.iloc[(roc.tf - 0).abs().argsort()[:1]]
-    print(roc_t['threshold'])
     threshold = roc_t['threshold']
     threshold = list(threshold)[0]
     #print(list(threshold))
