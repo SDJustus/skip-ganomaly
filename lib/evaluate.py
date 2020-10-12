@@ -43,6 +43,8 @@ def roc(labels, scores, saveto=True, output_directory="./", epoch = 0):
 
     labels = labels.cpu()
     scores = scores.cpu()
+    print(labels)
+    print(scores)
     #labels = labels - 1
     #print(labels)
     # True/False Positive Rates.
