@@ -73,6 +73,11 @@ class Options():
         self.parser.add_argument('--lr_decay_iters', type=int, default=50, help='multiply by a gamma every lr_decay_iters iterations')
         self.isTrain = True
         self.opt = None
+        #Test
+        self.parser.add_argument('--path_to_weights', type=str, default=None, help='path to the weights for inference')
+        self.parser.add_argument('--image_output_path', type=str, default="", help='path where the inference images '
+                                                                                   '(classified) should be saved')
+        self.parser.add_argument('--epoch', type=str, default=None, help='epoch of weights to choose')
 
     def parse(self):
         """ Parse Arguments.

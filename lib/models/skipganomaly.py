@@ -170,23 +170,28 @@ class Skipganomaly(BaseModel):
         self.netd.eval()
         with torch.no_grad():
             # Load the weights of netg and netd.
-            if self.opt.load_weights:
-                self.load_weights(is_best=True)
+            if self.opt.path_to_weights is not None:
+                if self.opt.epoch is None:
+                    raise ValueError("Need value for epoch of the weights")
+                self.load_weights(path=self.opt.path_to_weights, epoch=self.opt.epoch)
 
             self.opt.phase = 'test'
 
+            if self.opt.isTrain is False:
+                self.real_images = []
             scores = {}
 
             # Create big error tensor for the test set.
             self.an_scores = torch.zeros(size=(len(self.data.valid.dataset),), dtype=torch.float32, device=self.device)
             self.gt_labels = torch.zeros(size=(len(self.data.valid.dataset),), dtype=torch.long, device=self.device)
-            self.features  = torch.zeros(size=(len(self.data.valid.dataset), self.opt.nz), dtype=torch.float32, device=self.device)
+            self.features = torch.zeros(size=(len(self.data.valid.dataset), self.opt.nz), dtype=torch.float32, device=self.device)
 
             print("   Testing %s" % self.name)
             self.times = []
             self.total_steps = 0
             epoch_iter = 0
-            for i, data in enumerate(self.data.valid, 0):
+            i = 0
+            for data in tqdm(self.data.valid, leave=False, total=len(self.data.valid)):
                 self.total_steps += self.opt.batchsize
                 epoch_iter += self.opt.batchsize
                 time_i = time.time()
@@ -195,8 +200,8 @@ class Skipganomaly(BaseModel):
                 self.set_input(data)
                 self.fake = self.netg(self.input)
 
-                _, self.feat_real = self.netd(self.input)
-                _, self.feat_fake = self.netd(self.fake)
+                real_clas, self.feat_real = self.netd(self.input)
+                fake_clas, self.feat_fake = self.netd(self.fake)
 
                 # Calculate the anomaly score.
                 si = self.input.size()
@@ -219,9 +224,13 @@ class Skipganomaly(BaseModel):
                     dst = os.path.join(self.opt.outf, self.opt.name, 'test', 'images')
                     if not os.path.isdir(dst): os.makedirs(dst)
                     real, fake, _ = self.get_current_images()
+                    #iterate over them (real) and write anomaly score and ground truth on filename
                     vutils.save_image(real, '%s/real_%03d.png' % (dst, i+1), normalize=True)
                     vutils.save_image(fake, '%s/fake_%03d.png' % (dst, i+1), normalize=True)
 
+                if self.opt.isTrain is False:
+                    self.real_images.extend(real)
+                i = i + 1
             # Measure inference time.
             self.times = np.array(self.times)
             self.times = np.mean(self.times[:100] * 1000)
@@ -247,6 +256,27 @@ class Skipganomaly(BaseModel):
                                           #, ("support", support)
                                         # , ("conf_matrix", conf_matrix)
                                        ])
+
+            if self.opt.isTrain is False:
+                i = 0
+                for image, gt, anomaly_score in zip(self.real_images, scores["labels"].numpy(), scores["scores"].numpy()):
+                    anomaly_score=int(anomaly_score)
+                    name = ""
+                    if gt == anomaly_score == 0:
+                        name = "tp"
+                    if anomaly_score == 0 and gt != anomaly_score:
+                        name = "fp"
+                    if gt == anomaly_score == 1:
+                        name = "tn"
+                    if anomaly_score == 1 and gt != anomaly_score:
+                        name = "fn"
+                    dst = os.path.join(self.opt.outf, self.opt.name, 'test', 'inference').replace("\\","/")
+                    if not os.path.isdir(dst):
+                        os.makedirs(dst)
+                    vutils.save_image(image, '{0}/{1}_{2}.png'.format(str(dst), str(i), name), normalize=True)
+                    i = i + 1
+
+
 
 
 

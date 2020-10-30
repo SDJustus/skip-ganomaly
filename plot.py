@@ -2,11 +2,15 @@ import pandas as pd
 import seaborn as sns
 import numpy as np
 import matplotlib.pyplot as plt
+from sklearn.metrics import precision_recall_fscore_support
 import os
 
 import numpy as np
 
 # https://www.kaggle.com/grfiv4/plot-a-confusion-matrix
+from sklearn.metrics import confusion_matrix
+
+
 def plot_confusion_matrix(cm,
                           target_names,
                           title='Confusion matrix',
@@ -56,7 +60,7 @@ def plot_confusion_matrix(cm,
 
     plt.figure(figsize=(8, 6))
     plt.imshow(cm, interpolation='nearest', cmap=cmap)
-    plt.title(title)
+    #plt.title(title)
     plt.colorbar()
 
     if target_names is not None:
@@ -79,14 +83,13 @@ def plot_confusion_matrix(cm,
                      horizontalalignment="center",
                      color="white" if cm[i, j] > thresh else "black")
 
-
-    plt.tight_layout()
     plt.ylabel('True label')
-    plt.xlabel('Predicted label\naccuracy={:0.4f}; misclass={:0.4f}'.format(accuracy, misclass))
-    plt.show()
+    plt.xlabel('Predicted label')
+    plt.tight_layout()
+    plt.savefig(title+".png")
 
 
-def plot_hist(file_name):
+def plot_hist(file_name, threshold, title):
     hist = pd.read_csv(file_name)
     # Filter normal and abnormal scores.v
     abn_scr = hist.loc[hist.labels == 1]['scores']
@@ -95,15 +98,39 @@ def plot_hist(file_name):
     # fig, ax = plt.subplots(figsize=(4,4));
     sns.distplot(nrm_scr, label=r'Normal Scores')
     sns.distplot(abn_scr, label=r'Abnormal Scores')
+    plt.axvline(x=float(threshold), color="red", linestyle='--', label="Threshold")
     plt.legend()
+    #plt.title(title)
     plt.yticks([])
     plt.xlabel(r'Anomaly Scores')
-    plt.show()
+    plt.tight_layout()
+    plt.savefig(title+".png")
+    plt.close()
 
+def recall(conf_matrix):
+    tn, fp, fn, tp = conf_matrix.ravel()
+    return (tn)/(tn+fp)
+
+def precision(conf_matrix):
+    tn, fp, fn, tp = conf_matrix.ravel()
+    return (tn)/(tn+fn)
+
+def f1_score(conf_matrix):
+    return (2*precision(conf_matrix)*recall(conf_matrix))/(precision(conf_matrix)+recall(conf_matrix))
 
 if __name__ == "__main__":
-    cm1 = []
-    cm2 = []
-    cm3 = []
-    plot_hist("histogram.csv")
-    plot_confusion_matrix(cm1, target_names=["normal", "abnormal"])
+    plt.rcParams.update({'font.size': 18})
+    cm = {"SSR": ([[64, 11], [1427, 8343]], "0.045")} #SSR
+    cm["SSDD"] = ([[117, 27], [147, 620]], "0.151") #SSDD
+    cm["VDD_c_128"] = ([[27, 8], [37, 132]], "0.165") #VDD_c_128
+    cm["VDD_c_256"] = ([[29, 5], [26, 143]], "0.123") #VDD_c_256
+    cm["VDD_bw_128"] = ([[24, 10], [48, 120]], "0.522") #VDD_bw_128
+    cm["VDD_bw_256"] = ([[23, 11], [56, 112]], "0.307") #VDD_bw_256
+
+
+
+    #plot_hist("histogram.csv")
+    for key, value in cm.items():
+        plot_confusion_matrix(cm=np.asarray(value[0]), target_names=["Normal", "Abnormal"], normalize=False, title="Confusion Matrix " + key)
+        print(key + " recall: " + str(recall(np.asarray(value[0]))), ", precision: " + str(precision(np.asarray(value[0]))) + ", f1_score: " + str(f1_score(np.asarray(value[0]))))
+        #plot_hist("histogram"+key+".csv", value[1], title="Histogramm " + key)

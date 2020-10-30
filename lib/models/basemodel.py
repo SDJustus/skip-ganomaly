@@ -24,6 +24,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 from PIL import Image
+from collections import OrderedDict
 
 class BaseModel():
     """ Base Model for ganomaly
@@ -163,13 +164,33 @@ class BaseModel():
             path_g = f"./output/{self.name}/{self.opt.dataset}/train/weights/{fname_g}"
             path_d = f"./output/{self.name}/{self.opt.dataset}/train/weights/{fname_d}"
 
+        else:
+            path_g = path + "/" + fname_g
+            path_d = path + "/" + fname_d
+
         # Load the weights of netg and netd.
         print('>> Loading weights...')
-        weights_g = torch.load(path_g)['state_dict']
-        weights_d = torch.load(path_d)['state_dict']
+
+        if len(self.opt.gpu_ids) == 0:
+            weights_g = torch.load(path_g, map_location=lambda storage, loc: storage)['state_dict']
+            weights_d = torch.load(path_d, map_location=lambda storage, loc: storage)['state_dict']
+        else:
+            weights_g = torch.load(path_g)['state_dict']
+            weights_d = torch.load(path_d)['state_dict']
         try:
-            self.netg.load_state_dict(weights_g)
-            self.netd.load_state_dict(weights_d)
+            # create new OrderedDict that does not contain `module.`
+
+            new_weights_g = OrderedDict()
+            new_weights_d = OrderedDict()
+            for k, v in weights_g.items():
+                name = k[7:]  # remove `module.`
+                new_weights_g[name] = v
+            for k, v in weights_d.items():
+                name = k[7:]  # remove `module.`
+                new_weights_d[name] = v
+            # load params
+            self.netg.load_state_dict(new_weights_g)
+            self.netd.load_state_dict(new_weights_d)
         except IOError:
             raise IOError("netG weights not found")
         print('   Done.')
