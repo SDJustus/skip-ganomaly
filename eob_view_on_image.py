@@ -7,6 +7,8 @@ import cv2
 import os
 import json
 
+#https://www.pyimagesearch.com/2014/08/25/4-point-opencv-getperspective-transform-example/
+
 def order_points(pts):
 	# initialzie a list of coordinates that will be ordered
 	# such that the first entry in the list is the top-left,
