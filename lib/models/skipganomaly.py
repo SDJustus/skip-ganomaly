@@ -17,6 +17,7 @@ import torchvision.utils as vutils
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+from copy import deepcopy
 
 from lib.models.networks import NetD, weights_init, define_G, define_D, get_scheduler
 from lib.visualizer import Visualizer
@@ -88,7 +89,8 @@ class Skipganomaly(BaseModel):
             self.optimizers.append(self.optimizer_d)
             self.optimizers.append(self.optimizer_g)
             self.schedulers = [get_scheduler(optimizer, opt) for optimizer in self.optimizers]
-
+        else:
+            self.real_images = []
     def forward(self):
         self.forward_g()
         self.forward_d()
@@ -177,8 +179,7 @@ class Skipganomaly(BaseModel):
 
             self.opt.phase = 'test'
 
-            if self.opt.isTrain is False:
-                self.real_images = []
+
             scores = {}
 
             # Create big error tensor for the test set.
@@ -229,7 +230,7 @@ class Skipganomaly(BaseModel):
                     vutils.save_image(fake, '%s/fake_%03d.png' % (dst, i+1), normalize=True)
 
                 if self.opt.isTrain is False:
-                    self.real_images.extend(real)
+                    self.real_images.extend(deepcopy(real))
                 i = i + 1
             # Measure inference time.
             self.times = np.array(self.times)
@@ -259,6 +260,7 @@ class Skipganomaly(BaseModel):
 
             if self.opt.isTrain is False:
                 i = 0
+
                 for image, gt, anomaly_score in zip(self.real_images, scores["labels"].numpy(), scores["scores"].numpy()):
                     anomaly_score=int(anomaly_score)
                     name = ""
