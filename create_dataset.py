@@ -2,11 +2,13 @@ import os
 import time
 import cv2
 import numpy as np
+import yaml
 from albumentations import (VerticalFlip, HorizontalFlip, Flip, RandomRotate90, Rotate, ShiftScaleRotate, CenterCrop, OpticalDistortion, GridDistortion, ElasticTransform, JpegCompression, HueSaturationValue,
                             IAAEmboss, RGBShift, IAASharpen, GaussianBlur, IAAAdditiveGaussianNoise, RandomBrightnessContrast, Blur, MotionBlur, MedianBlur, GaussNoise, CLAHE, ChannelShuffle, InvertImg, RandomGamma, ToGray, PadIfNeeded, OneOf, Compose
                            )
 from sklearn.model_selection import train_test_split
 import argparse
+from lib.util import ParseKwargs
 
 
 def generate_skip_ganomaly_dataset(train_normal, test_normal, test_abnormal, dataset_name, img_shape=(128,128)):
@@ -80,46 +82,45 @@ def rotate_image(image):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("-nip","--normal_images_path", action="store", help="absolute path to images without defect (dont use backslash, use normal slash instead)",
-                        required=True)
-    parser.add_argument("-aip","--abnormal_images_path", action="store", help="absolute path to images with defect(dont use backslash, use normal slash instead)",
-                        required=True)
-    parser.add_argument("-is", "--image_size", action="store", help="wanted size of images. Will be quadratic so just wirte a single number for in pixel", default="256")
-    parser.add_argument("-dn", "--dataset_name", action="store", help="name of the resulting dataset", default="custom_dataset")
-    parser.add_argument("-aug", "--augment", action="store_true", help="determine if the images should be augmented")
-    parser.add_argument("-r", "--rotate", action="store_true", help="determine if the images should be rotated by 90 degrees")
-    parser.add_argument("-s", "--standardize", action="store_true", help="determine if the images should be locally standardized")
-
+    parser.add_argument("-c", "--config", action="store", help="path to config.yaml... Does not have to been set in the file is in root of skip-ganomaly", default="../config.yaml")
+    #parser.add_argument("-oc","--overwrite_config", nargs="*", action=ParseKwargs, help="overwrite config.yaml, i.e. -oc rotate=True dataset_name='custom_dataset_2'")
     args = parser.parse_args()
-    img_shape=(int(args.image_size),int(args.image_size))
-    normal_images_path = os.path.abspath(args.normal_images_path)
-    abnormal_images_path = os.path.abspath(args.abnormal_images_path)
-    print("Trying to get all images from {0} as normal images and images from {1} as abnormal images!"
-          .format(str(normal_images_path), str(abnormal_images_path)))
+    try:
+        with open(args.config, "r") as ymlfile:
+            cfg = yaml.load(ymlfile, Loader=yaml.FullLoader)
+    except FileNotFoundError:
+        print("No File named {} found!".format(args.config))
+    #config = {**cfg, **args.overwrite_config} if args.overwrite_config is not None else cfg
+    config = cfg
+    img_shape=(config["image_size"], config["image_size"])
+    print("Trying to get all images from {0} as normal images and images from {1} as abnormal images!".format(str(config["normal_images_paths"]), str(config["normal_images_paths"])))
     normal_images = []
     abnormal_images = []
-    normal_run=True
-    for path in [normal_images_path, abnormal_images_path]:
-        file_path = [os.path.join(path, o) for o in os.listdir(path) if (".png" in o or ".jpg" in o or ".bmp" in o)]
-        for file in file_path:
-            image = cv2.imread(file)
-            image = cv2.resize(image, img_shape)
-            if normal_run:
-                normal_images.append(image)
-            else:
-                abnormal_images.append(image)
-        normal_run=False
+    for flag, paths in {"normal":config["normal_images_paths"], "abnormal":config["abnormal_images_paths"]}.items():
+        for path in paths:
+            path = os.path.relpath(path)
+            if path in [os.path.relpath(black_path) for black_path in config["blacklist"]]:
+                print("{} is a blacklist image".format(str(path)))
+                continue
+            file_path = [os.path.join(path, o) for o in os.listdir(path) if (".png" in o.lower() or ".jpg" in o.lower() or ".bmp" in o.lower() or ".jpeg" in o.lower())]
+            for file in file_path:
+                image = cv2.imread(file)
+                image = cv2.resize(image, img_shape)
+                if flag == "normal":
+                    normal_images.append(image)
+                else:
+                    abnormal_images.append(image)
     print("Collected {0} normal images and {1} abnormal images!".format(str(len(normal_images)),
                                                                         str(len(abnormal_images))))
-    if args.standardize:
+    if config["standardize"]:
         print("Doing local standardization!")
         for images in [normal_images, abnormal_images]:
             for i in range(len(images)):
                 images[i] = local_standardization(images[i], 3)
 
     print("Doing train test split")
-    train_normal, test_normal = train_test_split(normal_images, test_size=0.2)
-    if args.rotate:
+    train_normal, test_normal = train_test_split(normal_images, test_size=config["test_data_size"])
+    if config["rotate"]:
         print("Doing all image rotation")
         rotated_images = []
         for images in [normal_images, abnormal_images]:
@@ -127,7 +128,7 @@ if __name__ == '__main__':
                 rotated_image = rotate_image(image)
                 rotated_images.append(rotated_image)
             images = np.concatenate((images, rotated_images))
-    if args.augment:
+    if config["augment"]:
         print("Augmenting normal images")
         augmentation = augment_image(p=0.7)
         augmented_images = []
@@ -140,6 +141,5 @@ if __name__ == '__main__':
     np.random.shuffle(test_normal)
     np.random.shuffle(abnormal_images)
 
-    generate_skip_ganomaly_dataset(train_normal, test_normal, abnormal_images, args.dataset_name,
-                                   img_shape)
+    generate_skip_ganomaly_dataset(train_normal, test_normal, abnormal_images, config["dataset_name"], img_shape)
 

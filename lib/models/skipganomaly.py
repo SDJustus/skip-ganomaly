@@ -134,15 +134,13 @@ class Skipganomaly(BaseModel):
         """       
         self.optimizer_g.zero_grad()
         self.backward_g()
-        self.optimizer_g.step()
 
     def update_netd(self):
         """ Update Discriminator Network.
         """       
         self.optimizer_d.zero_grad()
         self.backward_d()
-        self.optimizer_d.step()
-        if self.err_d < 1e-5: self.reinit_d()
+        
     ##
     def optimize_params(self):
         """ Optimize netD and netG  networks.
@@ -150,13 +148,9 @@ class Skipganomaly(BaseModel):
         self.forward()
         self.update_netg()
         self.update_netd()
-        #wandb.log({
-        #    "err_g_adv": self.err_g_adv,
-        #    "err_g_con": self.err_g_con,
-        #    "err_g_lat": self.err_g_lat,
-        #    "err_g": self.err_g,
-        #    "err_d": self.err_d
-        #    })
+        self.optimizer_g.step()
+        self.optimizer_d.step()
+        if self.err_d < 1e-5: self.reinit_d()
 
     ##
     def test(self, plot_hist=True):
