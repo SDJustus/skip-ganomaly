@@ -68,7 +68,7 @@ class Options():
         self.parser.add_argument('--lr', type=float, default=0.0002, help='initial learning rate for adam')
         self.parser.add_argument('--w_adv', type=float, default=1, help='Weight for adversarial loss. default=1')
         self.parser.add_argument('--w_con', type=float, default=50, help='Weight for reconstruction loss. default=50')
-        self.parser.add_argument('--w_lat', type=float, default=1, help='Weight for latent space loss. default=1')
+        self.parser.add_argument('--w_lat', type=float, default=1, help='Weight for latent space loss. default=1') 
         self.parser.add_argument('--lr_policy', type=str, default='lambda', help='lambda|step|plateau')
         self.parser.add_argument('--lr_decay_iters', type=int, default=50, help='multiply by a gamma every lr_decay_iters iterations')
         self.isTrain = True

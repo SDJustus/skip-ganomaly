@@ -183,11 +183,11 @@ class Skipganomaly(BaseModel):
 
             print("   Testing %s" % self.name)
             self.times = []
-            self.total_steps = 0
+            total_steps_test = 0
             epoch_iter = 0
             i = 0
             for data in tqdm(self.data.valid, leave=False, total=len(self.data.valid)):
-                self.total_steps += self.opt.batchsize
+                total_steps_test += self.opt.batchsize
                 epoch_iter += self.opt.batchsize
                 time_i = time.time()
 
@@ -236,14 +236,43 @@ class Skipganomaly(BaseModel):
             auc, threshold = roc(self.gt_labels, self.an_scores, output_directory=self.opt.outf, epoch=self.epoch)
 
 
-            scores["scores"] = self.an_scores.cpu()
-            scores["labels"] = self.gt_labels.cpu()
+            
+
+            ##
+            # PLOT PERFORMANCE
+            if self.opt.display and self.opt.phase == 'test':
+                plt.ion()
+                # Create data frame for scores and labels.
+                scores["scores"] = self.an_scores.cpu()
+                scores["labels"] = self.gt_labels.cpu()
+                print("Scores: " + str(scores["scores"]))
+                
+                hist = pd.DataFrame.from_dict(scores)
+                hist.to_csv(self.opt.outf + "/histogram" + str(self.epoch) + ".csv")
+
+                # Filter normal and abnormal scores.
+                abn_scr = hist.loc[hist.labels == 1]['scores']
+                nrm_scr = hist.loc[hist.labels == 0]['scores']
+
+                # Create figure and plot the distribution.
+                fig, axis = plt.subplots(figsize=(4,4))
+                sns.distplot(nrm_scr, label=r'Normal Scores', ax=axis)
+                sns.distplot(abn_scr, label=r'Abnormal Scores', ax=axis)
+                axis.vlines
+
+                plt.legend()
+                plt.yticks([])
+                plt.xlabel(r'Anomaly Scores')
+                self.visualizer.writer.add_figure("Histogram", fig, self.epoch)
+                
+                #self.visualizer.writer.add_custom_scalars_multilinechart()
 
             scores["scores"][scores["scores"] >= threshold] = 1
             scores["scores"][scores["scores"] < threshold] = 0
             #print(scores)
             precision, recall, f1_score, support = precision_recall_fscore_support(scores["labels"], scores["scores"],
                                                                                    average="binary", pos_label=0)
+            # conf_matrix = [["true_normal", "false_abnormal"], ["false_normal", "true_abnormal"]]
             conf_matrix = confusion_matrix(scores["labels"], scores["scores"])
             performance = OrderedDict([('Avg Run Time (ms/batch)', self.times), ('AUC', auc), ('precision', precision),
                                        ("recall", recall), ("F1_Score", f1_score), ("conf_matrix", conf_matrix),
@@ -251,6 +280,12 @@ class Skipganomaly(BaseModel):
                                           #, ("support", support)
                                         # , ("conf_matrix", conf_matrix)
                                        ])
+            if self.opt.display and self.opt.phase == 'test':
+                counter_ratio = float(epoch_iter) / len(self.data.valid.dataset)
+                self.visualizer.writer.add_pr_curve("pr_curve", scores["labels"], scores["scores"])
+                
+                self.visualizer.plot_current_conf_matrix(self.epoch, performance["conf_matrix"])
+                self.visualizer.plot_performance(self.epoch, counter_ratio, performance)
 
             if self.opt.isTrain is False:
                 i = 0
@@ -283,7 +318,8 @@ class Skipganomaly(BaseModel):
                 # Create data frame for scores and labels.
                 scores["scores"] = self.an_scores.cpu()
                 scores["labels"] = self.gt_labels.cpu()
-
+                print("Scores: " + str(scores["scores"]))
+                
                 hist = pd.DataFrame.from_dict(scores)
                 hist.to_csv(self.opt.outf + "/histogram" + str(self.epoch) + ".csv")
 
@@ -292,9 +328,10 @@ class Skipganomaly(BaseModel):
                 nrm_scr = hist.loc[hist.labels == 0]['scores']
 
                 # Create figure and plot the distribution.
-                # fig, ax = plt.subplots(figsize=(4,4));
-                sns.distplot(nrm_scr, label=r'Normal Scores')
-                sns.distplot(abn_scr, label=r'Abnormal Scores')
+                fig, axis = plt.subplots(figsize=(4,4))
+                sns.distplot(nrm_scr, label=r'Normal Scores', ax=axis)
+                sns.distplot(abn_scr, label=r'Abnormal Scores', ax=axis)
+                
 
                 plt.legend()
                 plt.yticks([])
@@ -302,9 +339,13 @@ class Skipganomaly(BaseModel):
 
             ##
             # PLOT PERFORMANCE
-            if self.opt.display_id > 0 and self.opt.phase == 'test':
+            if self.opt.display and self.opt.phase == 'test':
                 counter_ratio = float(epoch_iter) / len(self.data.valid.dataset)
+                self.visualizer.writer.add_pr_curve("pr_curve", scores["labels"], scores["scores"])
+                self.visualizer.writer.add_figure("Histogram", fig, self.epoch)
+                self.visualizer.plot_current_conf_matrix(self.epoch, performance["conf_matrix"])
                 self.visualizer.plot_performance(self.epoch, counter_ratio, performance)
+                #self.visualizer.writer.add_custom_scalars_multilinechart()
 
             ##
             # RETURN

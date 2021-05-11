@@ -199,7 +199,7 @@ class BaseModel():
     def train_one_epoch(self):
         """ Train the model for one epoch.
         """
-
+        self.opt.phase = "train"
         self.netg.train()
         self.netd.train()
         epoch_iter = 0
@@ -209,12 +209,13 @@ class BaseModel():
 
             self.set_input(data)
             self.optimize_params()
-
+            
             if self.total_steps % self.opt.print_freq == 0:
                 errors = self.get_errors()
+               
                 if self.opt.display:
-                    counter_ratio = float(epoch_iter) / len(self.data.train.dataset)
-                    self.visualizer.plot_current_errors(self.epoch, counter_ratio, errors)
+                    #counter_ratio = float(epoch_iter) / len(self.data.train.dataset)
+                    self.visualizer.plot_current_errors(self.epoch, self.total_steps, errors)
 
             if self.total_steps % self.opt.save_image_freq == 0:
                 reals, fakes, fixed = self.get_current_images()
@@ -314,7 +315,7 @@ class BaseModel():
             auc = evaluate(self.gt_labels, self.an_scores, metric=self.opt.metric)
             performance = OrderedDict([('Avg Run Time (ms/batch)', self.times), ('AUC', auc)])
 
-            if self.opt.display_id > 0 and self.opt.phase == 'test':
+            if self.opt.display and self.opt.phase == 'test':
                 counter_ratio = float(epoch_iter) / len(self.data.valid.dataset)
                 self.visualizer.plot_performance(self.epoch, counter_ratio, performance)
             return performance

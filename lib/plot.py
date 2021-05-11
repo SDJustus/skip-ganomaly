@@ -12,10 +12,11 @@ from sklearn.metrics import confusion_matrix
 
 
 def plot_confusion_matrix(cm,
-                          target_names,
+                          target_names=["Normal", "Abnormal"],
                           title='Confusion matrix',
                           cmap=None,
-                          normalize=True):
+                          normalize=True,
+                          savefig = True):
     """
     given a sklearn confusion matrix (cm), make a nice plot
 
@@ -58,7 +59,7 @@ def plot_confusion_matrix(cm,
     if cmap is None:
         cmap = plt.get_cmap('Blues')
 
-    plt.figure(figsize=(8, 6))
+    figure = plt.figure(figsize=(8, 6))
     plt.imshow(cm, interpolation='nearest', cmap=cmap)
     #plt.title(title)
     plt.colorbar()
@@ -86,7 +87,10 @@ def plot_confusion_matrix(cm,
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
     plt.tight_layout()
-    plt.savefig(title+".png")
+    if savefig:
+        plt.savefig(title+".png")
+    plt.close()
+    return figure
 
 
 def plot_hist(file_name, threshold, title):

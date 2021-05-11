@@ -99,17 +99,20 @@ if __name__ == '__main__':
     for flag, paths in {"normal":config["normal_images_paths"], "abnormal":config["abnormal_images_paths"]}.items():
         for path in paths:
             path = os.path.relpath(path)
-            if path in [os.path.relpath(black_path) for black_path in config["blacklist"]]:
-                print("{} is a blacklist image".format(str(path)))
-                continue
+            
             file_path = [os.path.join(path, o) for o in os.listdir(path) if (".png" in o.lower() or ".jpg" in o.lower() or ".bmp" in o.lower() or ".jpeg" in o.lower())]
             for file in file_path:
-                image = cv2.imread(file)
-                image = cv2.resize(image, img_shape)
-                if flag == "normal":
-                    normal_images.append(image)
+                
+                if file in [os.path.relpath(black_path) for black_path in config["blacklist"]]:
+                    print("{} is a blacklist image".format(str(file)))
+                    continue
                 else:
-                    abnormal_images.append(image)
+                    image = cv2.imread(file)
+                    image = cv2.resize(image, img_shape)
+                    if flag == "normal":
+                        normal_images.append(image)
+                    else:
+                        abnormal_images.append(image)
     print("Collected {0} normal images and {1} abnormal images!".format(str(len(normal_images)),
                                                                         str(len(abnormal_images))))
     if config["standardize"]:
@@ -117,17 +120,27 @@ if __name__ == '__main__':
         for images in [normal_images, abnormal_images]:
             for i in range(len(images)):
                 images[i] = local_standardization(images[i], 3)
-
-    print("Doing train test split")
-    train_normal, test_normal = train_test_split(normal_images, test_size=config["test_data_size"])
+        print("After standardization:")
+        print(len(normal_images))
+        print(len(abnormal_images))
     if config["rotate"]:
         print("Doing all image rotation")
-        rotated_images = []
-        for images in [normal_images, abnormal_images]:
+        
+        for key, images in {"normal":normal_images, "abnormal":abnormal_images}.items():
+            rotated_images = []
             for image in images:
                 rotated_image = rotate_image(image)
                 rotated_images.append(rotated_image)
-            images = np.concatenate((images, rotated_images))
+            if key == "normal":
+                normal_images = np.concatenate((images, rotated_images))
+            else:
+                abnormal_images = np.concatenate((images, rotated_images))
+        print("After rotation:")
+        print(len(normal_images))
+        print(len(abnormal_images))
+    print("Doing train test split")
+    train_normal, test_normal = train_test_split(normal_images, test_size=config["test_data_size"])
+    
     if config["augment"]:
         print("Augmenting normal images")
         augmentation = augment_image(p=0.7)
@@ -140,6 +153,9 @@ if __name__ == '__main__':
     np.random.shuffle(train_normal)
     np.random.shuffle(test_normal)
     np.random.shuffle(abnormal_images)
+    print(len(train_normal))
+    print(len(test_normal))
+    print(len(abnormal_images))
 
     generate_skip_ganomaly_dataset(train_normal, test_normal, abnormal_images, config["dataset_name"], img_shape)
 

@@ -21,6 +21,7 @@ def main():
     """ Training
     """
     opt = Options().parse()
+    opt.print_freq = opt.batchsize
     data = load_data(opt)
     model = load_model(opt, data)
     model.train()
