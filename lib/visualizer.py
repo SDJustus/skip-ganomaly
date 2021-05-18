@@ -24,13 +24,11 @@ class Visualizer():
     ##
     def __init__(self, opt):
         # self.opt = opt
-        self.display_id = opt.display_id
         self.win_size = 256
         self.name = opt.name
         self.opt = opt
         self.writer = None
         # use tensorboard for now
-        self.visdom = False
         if self.opt.display:
             from torch.utils.tensorboard import SummaryWriter
             self.writer = SummaryWriter()
@@ -56,7 +54,7 @@ class Visualizer():
         #     log_file.write('================ Training Loss (%s) ================\n' % now)
         now  = time.strftime("%c")
         title = f'================ {now} ================\n'
-        info  = f'{opt.abnormal_class}, {opt.nz}, {opt.w_adv}, {opt.w_con}, {opt.w_lat}\n'
+        info  = f'Anomalies, {opt.nz}, {opt.w_adv}, {opt.w_con}, {opt.w_lat}\n'
         self.write_to_log_file(text=title + info)
 
 
@@ -82,23 +80,7 @@ class Visualizer():
             counter_ratio (float): Ratio to plot the range between two epoch.
             errors (OrderedDict): Error for the current epoch.
         """
-        if self.visdom:
-            if not hasattr(self, 'plot_data') or self.plot_data is None:
-                self.plot_data = {'X': [], 'Y': [], 'legend': list(errors.keys())}
-            self.plot_data['X'].append(total_steps)
-            self.plot_data['Y'].append([errors[k] for k in self.plot_data['legend']])
-            self.vis.line(
-               X=np.stack([np.array(self.plot_data['X'])] * len(self.plot_data['legend']), 1),
-                Y =np.array(self.plot_data['Y']),
-                opts={
-                    'title': self.name + ' loss over time',
-                    'legend': self.plot_data['legend'],
-                    'xlabel': 'Epoch',
-                    'ylabel': 'Loss'
-                },
-                win=4)
-        else:
-            self.writer.add_scalars("Loss over time", errors, global_step=total_steps)
+        self.writer.add_scalars("Loss over time", errors, global_step=total_steps)
         
 
     ##
@@ -110,23 +92,8 @@ class Visualizer():
             counter_ratio (float): Ratio to plot the range between two epoch.
             performance (OrderedDict): Performance for the current epoch.
         """
-        if self.visdom:
-            if not hasattr(self, 'plot_res') or self.plot_res is None:
-                self.plot_res = {'X': [], 'Y': [], 'legend': list(performance.keys())}
-            self.plot_res['X'].append(epoch + counter_ratio)
-            self.plot_res['Y'].append([performance[k] for k in self.plot_res['legend']])
-            self.vis.line(
-                X=np.stack([np.array(self.plot_res['X'])] * len(self.plot_res['legend']), 1),
-                Y=np.array(self.plot_res['Y']),
-                opts={
-                    'title': self.name + 'Performance Metrics',
-                    'legend': self.plot_res['legend'],
-                    'xlabel': 'Epoch',
-                    'ylabel': 'Stats'
-                },
-                win=5)
-        else:
-            self.writer.add_scalars("Performance Metrics", {k:v for k,v in performance.items() if (k != "conf_matrix" and k != "Avg Run Time (ms/batch)")}, global_step=epoch)
+        
+        self.writer.add_scalars("Performance Metrics", {k:v for k,v in performance.items() if (k != "conf_matrix" and k != "Avg Run Time (ms/batch)")}, global_step=epoch)
             
         
     def plot_current_conf_matrix(self, epoch, cm):
@@ -178,7 +145,7 @@ class Visualizer():
         print(message)
         self.write_to_log_file(text=message)
 
-    def display_current_images(self, reals, fakes, fixed):
+    def display_current_images(self, reals, fakes, fixed, train_or_test="train", global_step=0):
         """ Display current images.
 
         Args:
@@ -191,13 +158,8 @@ class Visualizer():
         reals = self.normalize(reals.cpu().numpy())
         fakes = self.normalize(fakes.cpu().numpy())
         # fixed = self.normalize(fixed.cpu().numpy())
-        if self.visdom:
-            self.vis.images(reals, win=1, opts={'title': 'Reals'})
-            self.vis.images(fakes, win=2, opts={'title': 'Fakes'})
-            # self.vis.images(fixed, win=3, opts={'title': 'Fixed'})
-        else:
-            self.writer.add_images("reals", reals)
-            self.writer.add_images("fakes", fakes)
+        self.writer.add_images("Reals from {} step: ".format(str(train_or_test)), reals, global_step=global_step)
+        self.writer.add_images("Fakes from {} step: ".format(str(train_or_test)), fakes, global_step=global_step)
 
     def save_current_images(self, epoch, reals, fakes, fixed):
         """ Save images for epoch i.

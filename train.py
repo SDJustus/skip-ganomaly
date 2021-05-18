@@ -3,7 +3,6 @@ TRAIN SKIP/GANOMALY
 
 . Example: Run the following command from the terminal.
     run train.py                                    \
-        --model <skipganomaly, ganomaly>            \
         --dataset cifar10                           \
         --abnormal_class airplane                   \
         --display                                   \

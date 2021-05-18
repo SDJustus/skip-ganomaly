@@ -8,24 +8,18 @@ from albumentations import (VerticalFlip, HorizontalFlip, Flip, RandomRotate90, 
                            )
 from sklearn.model_selection import train_test_split
 import argparse
-from lib.util import ParseKwargs
 
 
 def generate_skip_ganomaly_dataset(train_normal, test_normal, test_abnormal, dataset_name, img_shape=(128,128)):
-    if not os.path.isdir(os.path.join("data")):
-         os.mkdir(os.path.join("data"))
-    if not os.path.isdir(os.path.join("data", dataset_name)):
-         os.mkdir(os.path.join("data", dataset_name))
-    else:
+    if not os.path.isdir(os.path.join("data")): os.mkdir(os.path.join("data"))
+    if not os.path.isdir(os.path.join("data", dataset_name)): os.mkdir(os.path.join("data", dataset_name))
+    else: 
         raise ValueError("The Dataset_name {} already exists. Please choose another name or delete the existing one.".format(dataset_name))
     for folder in ["train", "test"]:
-        if not os.path.isdir(os.path.join("data", dataset_name, folder)):
-            os.mkdir(os.path.join("data", dataset_name, folder))
-    if not os.path.isdir(os.path.join("data", dataset_name,  "train", "0.normal")):
-        os.mkdir(os.path.join("data", dataset_name,  "train", "0.normal"))
+        if not os.path.isdir(os.path.join("data", dataset_name, folder)): os.mkdir(os.path.join("data", dataset_name, folder))
+    if not os.path.isdir(os.path.join("data", dataset_name,  "train", "0.normal")): os.mkdir(os.path.join("data", dataset_name,  "train", "0.normal"))
     for folder in ["0.normal", "1.abnormal"]:
-        if not os.path.isdir(os.path.join("data", dataset_name, "test", folder)):
-            os.mkdir(os.path.join("data", dataset_name, "test", folder))
+        if not os.path.isdir(os.path.join("data", dataset_name, "test", folder)): os.mkdir(os.path.join("data", dataset_name, "test", folder))
     for dataset, path in zip([train_normal, test_normal, test_abnormal], [["train", "0.normal"], ["test", "0.normal"], ["test","1.abnormal"]]):
         for image in dataset:
             image = cv2.resize(image, img_shape)
@@ -62,12 +56,17 @@ def local_standardization(image, n_channel):
     means = []
     stds = []
     #Calculate pixel mean and standard deviation per channel
-    for i in range(n_channel):
-        means.append(image[:,:,i].mean())
-        stds.append(image[:,:,i].std())
-    # standardize the pixel images by each channel
-    for i in range(n_channel):
-        image[:,:,i] = (image[:,:,i] - means[i]) / stds[i]
+    if n_channel == 1:
+        mean = image.mean()
+        std = image.std()
+        image = image - mean / std
+    else:
+        for i in range(n_channel):
+            means.append(image[:,:,i].mean())
+            stds.append(image[:,:,i].std())
+        # standardize the pixel images by each channel
+        for i in range(n_channel):
+            image[:,:,i] = (image[:,:,i] - means[i]) / stds[i]
     # clip pixel values to [-1,1]
     image = np.clip(image, -1.0, 1.0)
     #shift from [-1,1] to [0,1] with 0.5 mean
@@ -78,6 +77,7 @@ def local_standardization(image, n_channel):
 
 def rotate_image(image):
     return RandomRotate90(always_apply=True).apply(image, factor=1)
+
 
 
 if __name__ == '__main__':
@@ -109,6 +109,8 @@ if __name__ == '__main__':
                 else:
                     image = cv2.imread(file)
                     image = cv2.resize(image, img_shape)
+                    
+
                     if flag == "normal":
                         normal_images.append(image)
                     else:
@@ -120,9 +122,12 @@ if __name__ == '__main__':
         for images in [normal_images, abnormal_images]:
             for i in range(len(images)):
                 images[i] = local_standardization(images[i], 3)
+                if config["greyscale"]:
+                        images[i] = cv2.cvtColor(images[i], cv2.COLOR_BGR2GRAY)
         print("After standardization:")
         print(len(normal_images))
         print(len(abnormal_images))
+        
     if config["rotate"]:
         print("Doing all image rotation")
         
@@ -149,6 +154,8 @@ if __name__ == '__main__':
             augmented_image = augmentation(image=image)["image"]
             augmented_images.append(augmented_image)
         train_normal = np.concatenate((train_normal, augmented_images))
+    
+    
 
     np.random.shuffle(train_normal)
     np.random.shuffle(test_normal)
