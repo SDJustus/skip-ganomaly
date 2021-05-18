@@ -258,6 +258,7 @@ class Skipganomaly:
     def forward_g(self):
         """ Forward propagate through netG
         """
+        #TODO: Check, why noised input is used
         self.fake = self.netg(self.input + self.noise)
 
     def forward_d(self):
@@ -286,6 +287,7 @@ class Skipganomaly:
         self.err_d_real = self.l_adv(self.pred_real, self.real_label)
 
         # Combine losses.
+        # TODO: According to https://github.com/samet-akcay/skip-ganomaly/issues/18#issue-728932038 ... Check if lat loss has to be negative in discriminator backprob
         self.err_d = self.err_d_real + self.err_d_fake + self.err_g_lat
         self.err_d.backward(retain_graph=True)
 
@@ -331,14 +333,13 @@ class Skipganomaly:
                 
                 errors = self.get_errors()
                
-                if self.opt.display:
-                    #counter_ratio = float(epoch_iter) / len(self.data.train.dataset)
+                if self.opt.display:                    
                     self.visualizer.plot_current_errors(self.epoch, self.total_steps, errors)
+                    # Write images to tensorboard
                     self.visualizer.display_current_images(reals, fakes, fixed, train_or_test="train", global_step=self.total_steps)
                     
 
             if self.total_steps % self.opt.save_image_freq == 0:
-
                 self.visualizer.save_current_images(self.epoch, reals, fakes, fixed)
 
         print(">> Training model %s. Epoch %d/%d" % (self.name, self.epoch+1, self.opt.niter))
@@ -427,6 +428,7 @@ class Skipganomaly:
                 self.times.append(time_o - time_i)
                 real, fake, fixed = self.get_current_images()
                 if self.opt.display and self.opt.phase == 'test':
+                    # Write images to tensorboard
                     self.visualizer.display_current_images(real, fake, fixed, train_or_test="test", global_step=self.epoch*len(self.data.valid)+total_steps_test)
                 # Save test images.
                 if self.opt.save_test_images:
@@ -480,21 +482,21 @@ class Skipganomaly:
 
             scores["scores"][scores["scores"] >= threshold] = 1
             scores["scores"][scores["scores"] < threshold] = 0
-            precision, recall, f1_score, support = precision_recall_fscore_support(scores["labels"], scores["scores"],
+            precision, recall, f1_score, _ = precision_recall_fscore_support(scores["labels"], scores["scores"],
                                                                                    average="binary", pos_label=0)
             #### conf_matrix = [["true_normal", "false_abnormal"], ["false_normal", "true_abnormal"]]
             conf_matrix = confusion_matrix(scores["labels"], scores["scores"])
             performance = OrderedDict([('Avg Run Time (ms/batch)', self.times), ('AUC', auc), ('precision', precision),
                                        ("recall", recall), ("F1_Score", f1_score), ("conf_matrix", conf_matrix),
-                                       ("threshold", threshold)
-                                          #, ("support", support)
-                                        # , ("conf_matrix", conf_matrix)
-                                       ])
+                                       ("threshold", threshold)])
+                     
+            ##
+            # PLOT PERFORMANCE
             if self.opt.display and self.opt.phase == 'test':
-                counter_ratio = float(epoch_iter) / len(self.data.valid.dataset)
-                
+                self.visualizer.writer.add_pr_curve("pr_curve", scores["labels"], scores["scores"], global_step=self.epoch)
                 self.visualizer.plot_current_conf_matrix(self.epoch, performance["conf_matrix"])
-
+                self.visualizer.plot_performance(self.epoch, 0, performance)
+                
             if self.opt.isTrain is False:
                 i = 0
 
@@ -514,46 +516,6 @@ class Skipganomaly:
                         os.makedirs(dst)
                     vutils.save_image(image, '{0}/{1}_{2}.png'.format(str(dst), str(i), name), normalize=True)
                     i = i + 1
-
-
-
-
-
-            ##
-            # PLOT HISTOGRAM
-            if True:
-                plt.ion()
-                # Create data frame for scores and labels.
-                scores["scores"] = self.an_scores.cpu()
-                scores["labels"] = self.gt_labels.cpu()
-                
-                hist = pd.DataFrame.from_dict(scores)
-                hist.to_csv(self.opt.outf + "/histogram" + str(self.epoch) + ".csv")
-
-                # Filter normal and abnormal scores.
-                abn_scr = hist.loc[hist.labels == 1]['scores']
-                nrm_scr = hist.loc[hist.labels == 0]['scores']
-
-                # Create figure and plot the distribution.
-                fig, axis = plt.subplots(figsize=(4,4))
-                sns.distplot(nrm_scr, label=r'Normal Scores', ax=axis)
-                sns.distplot(abn_scr, label=r'Abnormal Scores', ax=axis)
-                
-
-                plt.legend()
-                plt.yticks([])
-                plt.xlabel(r'Anomaly Scores')
-
-            ##
-            # PLOT PERFORMANCE
-            if self.opt.display and self.opt.phase == 'test':
-                counter_ratio = float(epoch_iter) / len(self.data.valid.dataset)
-                self.visualizer.writer.add_pr_curve("pr_curve", scores["labels"], scores["scores"], global_step=self.epoch)
-                #self.visualizer.writer.add_figure("Histogram with threshold: {}".format(performance["threshold"]), fig, self.epoch)
-                self.visualizer.plot_current_conf_matrix(self.epoch, performance["conf_matrix"])
-                self.visualizer.plot_performance(self.epoch, counter_ratio, performance)
-                #self.visualizer.writer.add_custom_scalars_multilinechart()
-
             ##
             # RETURN
             return performance
