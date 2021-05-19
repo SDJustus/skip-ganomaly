@@ -84,6 +84,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--config", action="store", help="path to config.yaml... Does not have to been set in the file is in root of skip-ganomaly", default="../config.yaml")
     parser.add_argument("-p", "--path", action="store", default="..\\", help="prepath tp paths in config.yaml. i.e. '..\\' if the folder is in the parent directory.")
+    args = parser.parse_args()
 
     try:
         with open(args.config, "r") as ymlfile:
