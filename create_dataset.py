@@ -83,8 +83,8 @@ def rotate_image(image):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--config", action="store", help="path to config.yaml... Does not have to been set in the file is in root of skip-ganomaly", default="../config.yaml")
-    #parser.add_argument("-oc","--overwrite_config", nargs="*", action=ParseKwargs, help="overwrite config.yaml, i.e. -oc rotate=True dataset_name='custom_dataset_2'")
-    args = parser.parse_args()
+    parser.add_argument("-p", "--path", action="store", default="..\\", help="prepath tp paths in config.yaml. i.e. '..\\' if the folder is in the parent directory.")
+
     try:
         with open(args.config, "r") as ymlfile:
             cfg = yaml.load(ymlfile, Loader=yaml.FullLoader)
