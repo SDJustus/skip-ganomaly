@@ -329,15 +329,16 @@ class Skipganomaly:
             self.set_input(data)
             self.optimize_params()
             reals, fakes, fixed = self.get_current_images()
-            if self.total_steps:
                 
-                errors = self.get_errors()
-               
-                if self.opt.display:                    
-                    self.visualizer.plot_current_errors(self.epoch, self.total_steps, errors)
-                    # Write images to tensorboard
+            errors = self.get_errors()
+            
+            if self.opt.display:                    
+                self.visualizer.plot_current_errors(self.epoch, self.total_steps, errors)
+                # Write images to tensorboard
+                if self.total_steps % self.opt.save_image_freq == 0:
+                    print("writing train images to tensorboard")
                     self.visualizer.display_current_images(reals, fakes, fixed, train_or_test="train", global_step=self.total_steps)
-                    
+                
 
             if self.total_steps % self.opt.save_image_freq == 0:
                 self.visualizer.save_current_images(self.epoch, reals, fakes, fixed)
@@ -427,8 +428,9 @@ class Skipganomaly:
 
                 self.times.append(time_o - time_i)
                 real, fake, fixed = self.get_current_images()
-                if self.opt.display and self.opt.phase == 'test':
-                    # Write images to tensorboard
+                
+                if self.epoch*len(self.data.valid)+total_steps_test % self.opt.save_image_freq == 0:
+                    print("writing test images to tensorboard")
                     self.visualizer.display_current_images(real, fake, fixed, train_or_test="test", global_step=self.epoch*len(self.data.valid)+total_steps_test)
                 # Save test images.
                 if self.opt.save_test_images:
