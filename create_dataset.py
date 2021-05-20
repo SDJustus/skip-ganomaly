@@ -8,6 +8,7 @@ from albumentations import (VerticalFlip, HorizontalFlip, Flip, RandomRotate90, 
                            )
 from sklearn.model_selection import train_test_split
 import argparse
+from lib.data.datasets import is_image_file
 
 
 def generate_skip_ganomaly_dataset(train_normal, test_normal, test_abnormal, dataset_name, img_shape=(128,128)):
@@ -99,9 +100,9 @@ if __name__ == '__main__':
     abnormal_images = []
     for flag, paths in {"normal":config["normal_images_paths"], "abnormal":config["abnormal_images_paths"]}.items():
         for path in paths:
-            path = os.path.relpath(path)
+            path = os.path.relpath(os.path.join(args.path, path))
             
-            file_path = [os.path.join(path, o) for o in os.listdir(path) if (".png" in o.lower() or ".jpg" in o.lower() or ".bmp" in o.lower() or ".jpeg" in o.lower())]
+            file_path = [os.path.join(path, o) for o in os.listdir(path) if is_image_file(o)]
             for file in file_path:
                 
                 if file in [os.path.relpath(black_path) for black_path in config["blacklist"]]:
