@@ -100,7 +100,7 @@ if __name__ == '__main__':
     abnormal_images = []
     for flag, paths in {"normal":config["normal_images_paths"], "abnormal":config["abnormal_images_paths"]}.items():
         for path in paths:
-            path = os.path.relpath(os.path.join(args.path, path))
+            path = os.path.relpath(args.path + path)
             
             file_path = [os.path.join(path, o) for o in os.listdir(path) if is_image_file(o)]
             for file in file_path:
