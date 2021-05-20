@@ -98,6 +98,9 @@ if __name__ == '__main__':
     print("Trying to get all images from {0} as normal images and images from {1} as abnormal images!".format(str(config["normal_images_paths"]), str(config["normal_images_paths"])))
     normal_images = []
     abnormal_images = []
+    blacklist_path = []
+    for path in config["blacklist"]:
+        blacklist_path.append(os.path.relpath(args.path + path))
     for flag, paths in {"normal":config["normal_images_paths"], "abnormal":config["abnormal_images_paths"]}.items():
         for path in paths:
             path = os.path.relpath(args.path + path)
@@ -105,7 +108,7 @@ if __name__ == '__main__':
             file_path = [os.path.join(path, o) for o in os.listdir(path) if is_image_file(o)]
             for file in file_path:
                 
-                if file in [os.path.relpath(black_path) for black_path in config["blacklist"]]:
+                if file in blacklist_path:
                     print("{} is a blacklist image".format(str(file)))
                     continue
                 else:
