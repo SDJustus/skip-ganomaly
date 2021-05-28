@@ -143,11 +143,11 @@ class Skipganomaly:
             [OrderedDict]: Dictionary containing errors.
         """
         errors = OrderedDict([
-            ('err_d', self.err_d.item()),
-            ('err_g', self.err_g.item()),
-            ('err_g_adv', self.err_g_adv.item()),
-            ('err_g_con', self.err_g_con.item()),
-            ('err_g_lat', self.err_g_lat.item())])
+            ('err_d', self.err_d),
+            ('err_g', self.err_g),
+            ('err_g_adv', self.err_g_adv),
+            ('err_g_con', self.err_g_con),
+            ('err_g_lat', self.err_g_lat)])
 
         return errors
 
@@ -288,6 +288,10 @@ class Skipganomaly:
 
         # Combine losses.
         # TODO: According to https://github.com/samet-akcay/skip-ganomaly/issues/18#issue-728932038 ... Check if lat loss has to be negative in discriminator backprob
+        if self.opt.verbose:
+            print(f'err_d_real: {str(self.err_d_real)}')
+            print(f'err_d_fake: {str(self.err_d_fake)}')
+            print(f'err_g_lat: {str(self.err_g_lat)}')
         self.err_d = self.err_d_real + self.err_d_fake + self.err_g_lat
         self.err_d.backward(retain_graph=True)
 
@@ -336,7 +340,6 @@ class Skipganomaly:
                 self.visualizer.plot_current_errors(self.epoch, self.total_steps, errors)
                 # Write images to tensorboard
                 if self.total_steps % self.opt.save_image_freq == 0:
-                    print("writing train images to tensorboard")
                     self.visualizer.display_current_images(reals, fakes, fixed, train_or_test="train", global_step=self.total_steps)
                 
 
@@ -419,18 +422,21 @@ class Skipganomaly:
                 lat = (self.feat_real - self.feat_fake).view(sz[0], sz[1] * sz[2] * sz[3])
                 rec = torch.mean(torch.pow(rec, 2), dim=1)
                 lat = torch.mean(torch.pow(lat, 2), dim=1)
+                if self.opt.verbose:
+                    print(f'rec: {str(rec)}')
+                    print(f'lat: {str(lat)}')
                 error = 0.9*rec + 0.1*lat
 
                 time_o = time.time()
 
                 self.an_scores[i*self.opt.batchsize: i*self.opt.batchsize + error.size(0)] = error.reshape(error.size(0))
                 self.gt_labels[i*self.opt.batchsize: i*self.opt.batchsize + error.size(0)] = self.gt.reshape(error.size(0))
-
+                if self.opt.verbose:
+                    print(f'an_scores: {str(self.an_scores)}')
                 self.times.append(time_o - time_i)
                 real, fake, fixed = self.get_current_images()
                 
                 if self.epoch*len(self.data.valid)+total_steps_test % self.opt.save_image_freq == 0:
-                    print("writing test images to tensorboard")
                     self.visualizer.display_current_images(real, fake, fixed, train_or_test="test", global_step=self.epoch*len(self.data.valid)+total_steps_test)
                 # Save test images.
                 if self.opt.save_test_images:
