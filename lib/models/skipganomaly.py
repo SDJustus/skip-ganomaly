@@ -273,6 +273,10 @@ class Skipganomaly:
         self.err_g_adv = self.opt.w_adv * self.l_adv(self.pred_fake, self.real_label)
         self.err_g_con = self.opt.w_con * self.l_con(self.fake, self.input)
         self.err_g_lat = self.opt.w_lat * self.l_lat(self.feat_fake, self.feat_real)
+        if self.opt.verbose:
+            print(f'err_g_adv: {str(self.err_g_adv)}')
+            print(f'err_g_con: {str(self.err_g_con)}')
+            print(f'err_g_lat: {str(self.err_g_lat)}')
 
         self.err_g = self.err_g_adv + self.err_g_con + self.err_g_lat
         self.err_g.backward(retain_graph=True)
