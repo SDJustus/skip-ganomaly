@@ -459,25 +459,20 @@ class Skipganomaly:
             self.times = np.mean(self.times[:100] * 1000)
 
             # Scale error vector between [0, 1]
-            self.an_scores = (self.an_scores - torch.min(self.an_scores)) / \
-                             (torch.max(self.an_scores) - torch.min(self.an_scores))
+            self.an_scores = (self.an_scores - torch.min(self.an_scores))/(torch.max(self.an_scores) - torch.min(self.an_scores))
             if self.opt.verbose:
                 print(f'scaled an_scores: {str(self.an_scores)}')
             auc, threshold = roc(self.gt_labels, self.an_scores, output_directory=self.opt.outf, epoch=self.epoch)
 
-
-            
-
+            # Create data frame for scores and labels.
+            scores["scores"] = self.an_scores.cpu()
+            scores["labels"] = self.gt_labels.cpu()
+            hist = pd.DataFrame.from_dict(scores)
+            hist.to_csv(self.opt.outf + "/histogram" + str(self.epoch) + ".csv")
             ##
             # PLOT PERFORMANCE
             if self.opt.display and self.opt.phase == 'test':
                 plt.ion()
-                # Create data frame for scores and labels.
-                scores["scores"] = self.an_scores.cpu()
-                scores["labels"] = self.gt_labels.cpu()
-                
-                hist = pd.DataFrame.from_dict(scores)
-                hist.to_csv(self.opt.outf + "/histogram" + str(self.epoch) + ".csv")
 
                 # Filter normal and abnormal scores.
                 abn_scr = hist.loc[hist.labels == 1]['scores']
