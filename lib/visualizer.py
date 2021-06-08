@@ -31,7 +31,7 @@ class Visualizer():
         # use tensorboard for now
         if self.opt.display:
             from torch.utils.tensorboard import SummaryWriter
-            self.writer = SummaryWriter()
+            self.writer = SummaryWriter(log_dir=os.path.join("../tensorboard/skip_ganomaly/", opt.outf))
 
         # --
         # Dictionaries for plotting data and results.

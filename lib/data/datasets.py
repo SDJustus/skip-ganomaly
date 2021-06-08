@@ -6,7 +6,7 @@ CREATE DATASETS
 
 import torch.utils.data as data
 import torch
-from PIL import Image
+from PIL import Image, ImageOps
 import os
 import os.path
 
@@ -48,6 +48,7 @@ def pil_loader(path):
     # open path as file to avoid ResourceWarning (https://github.com/python-pillow/Pillow/issues/835)
     with open(path, 'rb') as f:
         with Image.open(f) as img:
+            img = ImageOps.exif_transpose(img)
             return img.convert('RGB')
 
 def accimage_loader(path):

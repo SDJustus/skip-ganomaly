@@ -112,7 +112,7 @@ if __name__ == '__main__':
                     print("{} is a blacklist image".format(str(file)))
                     continue
                 else:
-                    image = cv2.imread(file)
+                    image = cv2.imread(file)                        
                     image = cv2.resize(image, img_shape)
                     
 
