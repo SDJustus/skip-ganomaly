@@ -22,9 +22,12 @@ def generate_skip_ganomaly_dataset(train_normal, test_normal, test_abnormal, dat
     for folder in ["0.normal", "1.abnormal"]:
         if not os.path.isdir(os.path.join("data", dataset_name, "test", folder)): os.mkdir(os.path.join("data", dataset_name, "test", folder))
     for dataset, path in zip([train_normal, test_normal, test_abnormal], [["train", "0.normal"], ["test", "0.normal"], ["test","1.abnormal"]]):
+        file_names = []
         for image in dataset:
             image = cv2.resize(image, img_shape)
-            cv2.imwrite(os.path.join(os.getcwd(), "data", dataset_name, path[0], path[1], str(time.time())+".png"), image)
+            file_name = str(time.time())+".png"
+            cv2.imwrite(os.path.join(os.getcwd(), "data", dataset_name, path[0], path[1], file_name), image)
+            time.sleep(0.001)
 
 def augment_image(p=0.7):
     return Compose([
