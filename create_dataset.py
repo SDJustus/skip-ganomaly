@@ -11,18 +11,20 @@ import argparse
 from lib.data.datasets import is_image_file
 
 
-def generate_skip_ganomaly_dataset(train_normal, test_normal, test_abnormal, dataset_name, img_shape=(128,128)):
+def generate_dataset(train_normal, test_normal, test_abnormal, dataset_name, train_abnormal=None, img_shape=(128,128)):
     if not os.path.isdir(os.path.join("data")): os.mkdir(os.path.join("data"))
     if not os.path.isdir(os.path.join("data", dataset_name)): os.mkdir(os.path.join("data", dataset_name))
     else: 
         raise ValueError("The Dataset_name {} already exists. Please choose another name or delete the existing one.".format(dataset_name))
     for folder in ["train", "test"]:
-        if not os.path.isdir(os.path.join("data", dataset_name, folder)): os.mkdir(os.path.join("data", dataset_name, folder))
-    if not os.path.isdir(os.path.join("data", dataset_name,  "train", "0.normal")): os.mkdir(os.path.join("data", dataset_name,  "train", "0.normal"))
-    for folder in ["0.normal", "1.abnormal"]:
-        if not os.path.isdir(os.path.join("data", dataset_name, "test", folder)): os.mkdir(os.path.join("data", dataset_name, "test", folder))
-    for dataset, path in zip([train_normal, test_normal, test_abnormal], [["train", "0.normal"], ["test", "0.normal"], ["test","1.abnormal"]]):
-        file_names = []
+        for sub_folder in ["0.normal", "1.abnormal"]:
+            if not train_abnormal and folder == "train" and sub_folder == "1.abnormal":
+                continue
+            if not os.path.isdir(os.path.join("data", dataset_name, folder, sub_folder)): os.makedirs(os.path.join("data", dataset_name, folder, sub_folder))
+    zipped_stuff = zip([train_normal, test_normal, test_abnormal], [["train", "0.normal"], ["test", "0.normal"], ["test","1.abnormal"]])
+    if train_abnormal:
+        zipped_stuff = zip([train_normal, train_abnormal, test_normal, test_abnormal], [["train", "0.normal"], ["train", "1.abnormal"], ["test", "0.normal"], ["test", "1.abnormal"]])
+    for dataset, path in zipped_stuff:
         for image in dataset:
             image = cv2.resize(image, img_shape)
             file_name = str(time.time())+".png"
@@ -153,6 +155,7 @@ if __name__ == '__main__':
         print(len(abnormal_images))
     print("Doing train test split")
     train_normal, test_normal = train_test_split(normal_images, test_size=config["test_data_size"])
+    train_abnormal, test_abnormal = train_test_split(abnormal_images, test_size=config["test_data_size"])
     
     if config["augment"]:
         print("Augmenting normal images")
@@ -167,10 +170,19 @@ if __name__ == '__main__':
 
     np.random.shuffle(train_normal)
     np.random.shuffle(test_normal)
-    np.random.shuffle(abnormal_images)
-    print(len(train_normal))
-    print(len(test_normal))
-    print(len(abnormal_images))
-
-    generate_skip_ganomaly_dataset(train_normal, test_normal, abnormal_images, config["dataset_name"], img_shape)
+    np.random.shuffle(train_abnormal)
+    np.random.shuffle(test_abnormal)
+    print("train_normal", len(train_normal))
+    print("test_normal", len(test_normal))
+    print("train_abnormal", len(train_abnormal))
+    print("test_abnormal", len(test_abnormal))
+    if "all" in config["model"]:
+        generate_dataset(train_normal=train_normal, test_normal=test_normal, train_abnormal=train_abnormal, test_abnormal=test_abnormal, dataset_name=config["dataset_name"] + "_deep", img_shape=img_shape)
+        generate_dataset(train_normal=train_normal, test_normal=test_normal, test_abnormal=np.concatenate((train_abnormal, test_abnormal)), dataset_name=config["dataset_name"] + "_skip", img_shape=img_shape)
+    elif "deep" in config["model"]:
+        generate_dataset(train_normal=train_normal, test_normal=test_normal, train_abnormal=train_abnormal, test_abnormal=test_abnormal, dataset_name=config["dataset_name"] + "_" + config["model"], img_shape=img_shape)
+    elif "skip" in config["model"]:
+        generate_dataset(train_normal=train_normal, test_normal=test_normal, test_abnormal=np.concatenate((train_abnormal, test_abnormal)), dataset_name=config["dataset_name"] + "_" + config["model"], img_shape=img_shape)
+    else:
+        raise NotImplementedError("Can't create dataset for not implemented Model")
 
