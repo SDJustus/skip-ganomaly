@@ -270,7 +270,9 @@ class Skipganomaly:
     def backward_g(self):
         """ Backpropagate netg
         """
+        print("pred_fake before:", str(self.pred_fake))
         self.err_g_adv = self.opt.w_adv * self.l_adv(self.pred_fake, self.real_label)
+        print("pred_fake after:", str(self.pred_fake))
         self.err_g_con = self.opt.w_con * self.l_con(self.fake, self.input)
         self.err_g_lat = self.opt.w_lat * self.l_lat(self.feat_fake, self.feat_real)
         if self.opt.verbose:
