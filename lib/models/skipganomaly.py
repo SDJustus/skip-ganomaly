@@ -22,7 +22,7 @@ from copy import deepcopy
 from lib.models.networks import weights_init, define_G, define_D, get_scheduler
 from lib.visualizer import Visualizer
 from lib.loss import l2_loss
-from lib.evaluate import roc
+from lib.evaluate import roc, auprc
 from sklearn.metrics import precision_recall_fscore_support, confusion_matrix
 #import wandb
 
@@ -491,14 +491,15 @@ class Skipganomaly:
                 plt.xlabel(r'Anomaly Scores')
                 self.visualizer.writer.add_figure("Histogram with threshold {}".format(threshold), fig, self.epoch)
 
+            aucpr = auprc(scores["labels"], scores["scores"])
             scores["scores"][scores["scores"] >= threshold] = 1
             scores["scores"][scores["scores"] < threshold] = 0
             precision, recall, f1_score, _ = precision_recall_fscore_support(scores["labels"], scores["scores"],
-                                                                                   average="binary", pos_label=0)
+                                                                                   average="binary", pos_label=1)
             #### conf_matrix = [["true_normal", "false_abnormal"], ["false_normal", "true_abnormal"]]
             conf_matrix = confusion_matrix(scores["labels"], scores["scores"])
             performance = OrderedDict([('Avg Run Time (ms/batch)', self.times), ('AUC', auc), ('precision', precision),
-                                       ("recall", recall), ("F1_Score", f1_score), ("conf_matrix", conf_matrix),
+                                       ("recall", recall), ("F1_Score", f1_score), ("conf_matrix", conf_matrix), ("aucpr", aucpr)
                                        ("threshold", threshold)])
                      
             ##
