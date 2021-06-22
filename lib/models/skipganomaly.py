@@ -499,7 +499,7 @@ class Skipganomaly:
             #### conf_matrix = [["true_normal", "false_abnormal"], ["false_normal", "true_abnormal"]]
             conf_matrix = confusion_matrix(scores["labels"], scores["scores"])
             performance = OrderedDict([('Avg Run Time (ms/batch)', self.times), ('AUC', auc), ('precision', precision),
-                                       ("recall", recall), ("F1_Score", f1_score), ("conf_matrix", conf_matrix), ("aucpr", aucpr)
+                                       ("recall", recall), ("F1_Score", f1_score), ("conf_matrix", conf_matrix), ("aucpr", aucpr),
                                        ("threshold", threshold)])
                      
             ##
