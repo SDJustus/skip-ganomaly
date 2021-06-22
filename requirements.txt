@@ -2,7 +2,7 @@ albumentations==0.4.6
 asn1crypto==0.24.0
 backcall==0.1.0
 certifi==2019.6.16
-cffi==1.12.3
+cffi
 chardet==3.0.4
 cryptography>=3.3.2
 cycler==0.10.0
