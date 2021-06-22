@@ -9,6 +9,7 @@ Returns:
 # LIBRARIES
 from __future__ import print_function
 import matplotlib
+from sklearn.metrics.classification import confusion_matrix, precision_recall_fscore_support
 matplotlib.use('Agg')
 import os
 from sklearn.metrics import roc_curve, auc, average_precision_score, f1_score
@@ -74,8 +75,34 @@ def roc(labels, scores, saveto=True, output_directory="./", epoch = 0):
         plt.savefig(output_directory + "/ROC" + str(epoch) + ".png")
         plt.close()
 
-    return roc_auc, threshold
+    return roc_auc, threshold, t
 
 def auprc(labels, scores):
     ap = average_precision_score(labels, scores)
     return ap
+
+def get_values_for_pr_curve(labels, scores, thresholds):
+    precisions = []
+    recalls = []
+    tn_counts = []
+    fp_counts = []
+    fn_counts = []
+    tp_counts = []
+    for threshold in thresholds:
+        scores_new = [1 if ele >= threshold else 0 for ele in scores] 
+        tn, fp, fn, tp = confusion_matrix(labels, scores_new).ravel()
+        if len(set(scores_new)) == 1:
+            print("y_preds_new did only contain the element {}... Continuing with next iteration!".format(scores_new[0]))
+            continue
+        
+        precision, recall, _, _ = precision_recall_fscore_support(labels, scores_new, average="binary", pos_label=1)
+        precisions.append(precision)
+        recalls.append(recall)
+        tn_counts.append(tn)
+        fp_counts.append(fp)
+        fn_counts.append(fn)
+        tp_counts.append(tp)
+        
+        
+    
+    return np.array(tp_counts), np.array(fp_counts), np.array(tn_counts), np.array(fn_counts), np.array(precisions), np.array(recalls), len(thresholds)

@@ -464,7 +464,7 @@ class Skipganomaly:
             self.an_scores = (self.an_scores - torch.min(self.an_scores))/(torch.max(self.an_scores) - torch.min(self.an_scores))
             if self.opt.verbose:
                 print(f'scaled an_scores: {str(self.an_scores)}')
-            auc, threshold = roc(self.gt_labels, self.an_scores, output_directory=self.opt.outf, epoch=self.epoch)
+            auc, threshold, thresholds = roc(self.gt_labels, self.an_scores, output_directory=self.opt.outf, epoch=self.epoch)
 
             # Create data frame for scores and labels.
             scores["scores"] = self.an_scores.cpu()
@@ -474,6 +474,7 @@ class Skipganomaly:
             ##
             # PLOT PERFORMANCE
             if self.opt.display and self.opt.phase == 'test':
+                
                 plt.ion()
 
                 # Filter normal and abnormal scores.
@@ -490,8 +491,10 @@ class Skipganomaly:
                 plt.yticks([])
                 plt.xlabel(r'Anomaly Scores')
                 self.visualizer.writer.add_figure("Histogram with threshold {}".format(threshold), fig, self.epoch)
+                self.visualizer.plot_pr_curve(labels=scores["labels"], scores=scores["scores"], thresholds=thresholds, global_step=self.epoch)
 
             aucpr = auprc(scores["labels"], scores["scores"])
+            
             scores["scores"][scores["scores"] >= threshold] = 1
             scores["scores"][scores["scores"] < threshold] = 0
             precision, recall, f1_score, _ = precision_recall_fscore_support(scores["labels"], scores["scores"],

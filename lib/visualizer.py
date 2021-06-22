@@ -10,6 +10,7 @@ import time
 import numpy as np
 import torchvision.utils as vutils
 from .plot import plot_confusion_matrix
+from .evaluate import get_values_for_pr_curve
 
 ##
 class Visualizer():
@@ -30,7 +31,7 @@ class Visualizer():
         self.writer = None
         # use tensorboard for now
         if self.opt.display:
-            from torch.utils.tensorboard import SummaryWriter
+            from tensorboardX import SummaryWriter
             self.writer = SummaryWriter(log_dir=os.path.join("../tensorboard/skip_ganomaly/", opt.outf))
 
         # --
@@ -160,7 +161,12 @@ class Visualizer():
         # fixed = self.normalize(fixed.cpu().numpy())
         self.writer.add_images("Reals from {} step: ".format(str(train_or_test)), reals, global_step=global_step)
         self.writer.add_images("Fakes from {} step: ".format(str(train_or_test)), fakes, global_step=global_step)
-
+        
+    def plot_pr_curve(self, labels, scores, thresholds, global_step):
+        tp_counts, fp_counts, tn_counts, fn_counts, precisions, recalls, n_thresholds = get_values_for_pr_curve(labels, scores, thresholds)
+        self.writer.add_pr_curve_raw("Precision_recall_curve", true_positive_counts=tp_counts, false_positive_counts=fp_counts, true_negative_counts=tn_counts, false_negative_counts= fn_counts,
+                                             precision=precisions, recall=recalls, num_thresholds=n_thresholds, global_step=global_step)
+        
     def save_current_images(self, epoch, reals, fakes, fixed):
         """ Save images for epoch i.
 
