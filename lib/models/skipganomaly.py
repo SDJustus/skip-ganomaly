@@ -505,7 +505,6 @@ class Skipganomaly:
             ##
             # PLOT PERFORMANCE
             if self.opt.display and self.opt.phase == 'test':
-                self.visualizer.writer.add_pr_curve("pr_curve", scores["labels"], scores["scores"], global_step=self.epoch)
                 self.visualizer.plot_current_conf_matrix(self.epoch, performance["conf_matrix"])
                 self.visualizer.plot_performance(self.epoch, 0, performance)
                 
