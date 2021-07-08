@@ -6,7 +6,7 @@ output/
 *.pth
 samples/
 runs
-test_data_output
+test_data_output*
 projector/
 __pycache__/
 *.pylintrc

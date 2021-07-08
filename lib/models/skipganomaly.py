@@ -5,6 +5,7 @@
 ##
 from collections import OrderedDict
 import os
+from re import I
 import time
 import numpy as np
 from tqdm import tqdm
@@ -22,8 +23,9 @@ from copy import deepcopy
 from lib.models.networks import weights_init, define_G, define_D, get_scheduler
 from lib.visualizer import Visualizer
 from lib.loss import l2_loss
-from lib.evaluate import roc, auprc
+from lib.evaluate import roc, auprc, write_inference_result
 from sklearn.metrics import precision_recall_fscore_support, confusion_matrix
+import json
 #import wandb
 
 
@@ -36,14 +38,15 @@ class Skipganomaly:
 
     def __init__(self, opt, data=None):
         # Seed for deterministic behavior
-        self.seed(opt.manualseed)
-
+        
+        print("Seed:", str(torch.seed()))
         # Initalize variables.
         self.opt = opt
         self.visualizer = Visualizer(opt)
         self.data = data
         self.trn_dir = os.path.join(self.opt.outf, self.opt.name, 'train')
         self.tst_dir = os.path.join(self.opt.outf, self.opt.name, 'test')
+        self.inf_dir = os.path.join(self.opt.outf, self.opt.name, 'inference')
         self.device = torch.device("cuda:0" if self.opt.device != "cpu" else "cpu")
 
         # -- Misc attributes
@@ -53,6 +56,7 @@ class Skipganomaly:
 
         ##
         # Create and initialize networks from networks.py.
+        
         self.netg = define_G(self.opt, norm='batch', use_dropout=False, init_type='normal')
         self.netd = define_D(self.opt, norm='batch', use_sigmoid=False, init_type='normal')
 
@@ -86,7 +90,7 @@ class Skipganomaly:
 
         ##
         # Setup optimizer
-        if self.opt.isTrain:
+        if self.opt.phase == "train":
             self.netg.train()
             self.netd.train()
             self.optimizers = []
@@ -95,27 +99,8 @@ class Skipganomaly:
             self.optimizers.append(self.optimizer_d)
             self.optimizers.append(self.optimizer_g)
             self.schedulers = [get_scheduler(optimizer, opt) for optimizer in self.optimizers]
-        else:
-            self.real_images = []
+
             
-    def seed(self, seed_value):
-        """ Seed 
-
-        Arguments:
-            seed_value {int} -- [description]
-        """
-        # Check if seed is default value
-        if seed_value == -1:
-            return
-
-        # Otherwise seed all functionality
-        import random
-        random.seed(seed_value)
-        torch.manual_seed(seed_value)
-        torch.cuda.manual_seed_all(seed_value)
-        np.random.seed(seed_value)
-        torch.backends.cudnn.deterministic = True
-
     ##
     def set_input(self, input:torch.Tensor, noise:bool=False):
         """ Set input and ground truth
@@ -244,8 +229,8 @@ class Skipganomaly:
                 name = k[7:]  # remove `module.`
                 new_weights_d[name] = v
             # load params
-            self.netg.load_state_dict(new_weights_g)
-            self.netd.load_state_dict(new_weights_d)
+            self.netg.load_state_dict(weights_g)
+            self.netd.load_state_dict(weights_d)
         except IOError:
             raise IOError("netG weights not found")
         print('   Done.')
@@ -332,6 +317,7 @@ class Skipganomaly:
         for data in tqdm(self.data.train, leave=False, total=len(self.data.train)):
             self.total_steps += self.opt.batchsize
             epoch_iter += self.opt.batchsize
+            print(data[2])
 
             self.set_input(data)
             self.optimize_params()
@@ -368,7 +354,7 @@ class Skipganomaly:
             res = self.test()
             if res['AUC'] > best_auc:
                 best_auc = res['AUC']
-                self.save_weights(self.epoch)
+                self.save_weights(self.epoch, is_best=True)
             self.visualizer.print_current_performance(res, best_auc)
         print(">> Training model %s.[Done]" % self.name)
 
@@ -393,13 +379,9 @@ class Skipganomaly:
 
             self.opt.phase = 'test'
 
-
-            scores = {}
-
             # Create big error tensor for the test set.
             self.an_scores = torch.zeros(size=(len(self.data.valid.dataset),), dtype=torch.float32, device=self.device)
             self.gt_labels = torch.zeros(size=(len(self.data.valid.dataset),), dtype=torch.long, device=self.device)
-            self.features = torch.zeros(size=(len(self.data.valid.dataset), self.opt.nz), dtype=torch.float32, device=self.device)
 
             print("   Testing %s" % self.name)
             self.times = []
@@ -412,23 +394,10 @@ class Skipganomaly:
                 time_i = time.time()
 
                 # Forward - Pass
-                self.set_input(data)
-                self.fake = self.netg(self.input)
-
-                real_clas, self.feat_real = self.netd(self.input)
-                fake_clas, self.feat_fake = self.netd(self.fake)
+                self.forward_for_testing(data)
 
                 # Calculate the anomaly score.
-                si = self.input.size()
-                sz = self.feat_real.size()
-                rec = (self.input - self.fake).view(si[0], si[1] * si[2] * si[3])
-                lat = (self.feat_real - self.feat_fake).view(sz[0], sz[1] * sz[2] * sz[3])
-                rec = torch.mean(torch.pow(rec, 2), dim=1)
-                lat = torch.mean(torch.pow(lat, 2), dim=1)
-                if self.opt.verbose:
-                    print(f'rec: {str(rec)}')
-                    print(f'lat: {str(lat)}')
-                error = 0.9*rec + 0.1*lat
+                error = self.calculate_an_score()
 
                 time_o = time.time()
 
@@ -449,84 +418,142 @@ class Skipganomaly:
                     #iterate over them (real) and write anomaly score and ground truth on filename
                     vutils.save_image(real, '%s/real_%03d.png' % (dst, i+1), normalize=True)
                     vutils.save_image(fake, '%s/fake_%03d.png' % (dst, i+1), normalize=True)
-
-                if self.opt.isTrain is False:
-                    self.real_images.extend(deepcopy(real))
                 i = i + 1
             # Measure inference time.
             self.times = np.array(self.times)
             self.times = np.mean(self.times[:100] * 1000)
 
             # Scale error vector between [0, 1]
-            self.an_scores = (self.an_scores - torch.min(self.an_scores))/(torch.max(self.an_scores) - torch.min(self.an_scores))
+            # self.an_scores = (self.an_scores - torch.min(self.an_scores))/(torch.max(self.an_scores) - torch.min(self.an_scores))
             if self.opt.verbose:
                 print(f'scaled an_scores: {str(self.an_scores)}')
-            auc, threshold, thresholds = roc(self.gt_labels, self.an_scores, output_directory=self.opt.outf, epoch=self.epoch)
-
-            # Create data frame for scores and labels.
-            scores["scores"] = self.an_scores.cpu()
-            scores["labels"] = self.gt_labels.cpu()
-            hist = pd.DataFrame.from_dict(scores)
-            hist.to_csv(self.opt.outf + "/histogram" + str(self.epoch) + ".csv")
-            ##
-            # PLOT PERFORMANCE
-            if self.opt.display and self.opt.phase == 'test':
-                
-                plt.ion()
-
-                # Filter normal and abnormal scores.
-                abn_scr = hist.loc[hist.labels == 1]['scores']
-                nrm_scr = hist.loc[hist.labels == 0]['scores']
-
-                # Create figure and plot the distribution.
-                fig, axis = plt.subplots(figsize=(4,4))
-                sns.distplot(nrm_scr, label=r'Normal Scores', ax=axis)
-                sns.distplot(abn_scr, label=r'Abnormal Scores', ax=axis)
-                axis.vlines
-
-                plt.legend()
-                plt.yticks([])
-                plt.xlabel(r'Anomaly Scores')
-                self.visualizer.writer.add_figure("Histogram with threshold {}".format(threshold), fig, self.epoch)
-                self.visualizer.plot_pr_curve(labels=scores["labels"], scores=scores["scores"], thresholds=thresholds, global_step=self.epoch)
-
-            aucpr = auprc(scores["labels"], scores["scores"])
-            
-            scores["scores"][scores["scores"] >= threshold] = 1
-            scores["scores"][scores["scores"] < threshold] = 0
-            precision, recall, f1_score, _ = precision_recall_fscore_support(scores["labels"], scores["scores"],
-                                                                                   average="binary", pos_label=1)
-            #### conf_matrix = [["true_normal", "false_abnormal"], ["false_normal", "true_abnormal"]]
-            conf_matrix = confusion_matrix(scores["labels"], scores["scores"])
-            performance = OrderedDict([('Avg Run Time (ms/batch)', self.times), ('AUC', auc), ('precision', precision),
-                                       ("recall", recall), ("F1_Score", f1_score), ("conf_matrix", conf_matrix), ("aucpr", aucpr),
-                                       ("threshold", threshold)])
+            _, performance = self.calculate_performance()
                      
             ##
             # PLOT PERFORMANCE
-            if self.opt.display and self.opt.phase == 'test':
+            if self.opt.display:
                 self.visualizer.plot_current_conf_matrix(self.epoch, performance["conf_matrix"])
                 self.visualizer.plot_performance(self.epoch, 0, performance)
-                
-            if self.opt.isTrain is False:
-                i = 0
+            return performance
 
-                for image, gt, anomaly_score in zip(self.real_images, scores["labels"].numpy(), scores["scores"].numpy()):
-                    anomaly_score=int(anomaly_score)
-                    name = ""
-                    if gt == anomaly_score == 0:
-                        name = "tp"
-                    if anomaly_score == 0 and gt != anomaly_score:
-                        name = "fp"
-                    if gt == anomaly_score == 1:
-                        name = "tn"
-                    if anomaly_score == 1 and gt != anomaly_score:
-                        name = "fn"
-                    dst = os.path.join(self.opt.outf, self.opt.name, 'test', 'inference').replace("\\","/")
-                    if not os.path.isdir(dst):
-                        os.makedirs(dst)
-                    vutils.save_image(image, '{0}/{1}_{2}.png'.format(str(dst), str(i), name), normalize=True)
-                    i = i + 1
+    def forward_for_testing(self, data):
+        self.set_input(data)
+        self.fake = self.netg(self.input)
+
+        real_clas, self.feat_real = self.netd(self.input)
+        fake_clas, self.feat_fake = self.netd(self.fake)
+
+    
+    
+    def inference(self):
+        self.netg.eval()
+        self.netd.eval()
+        with torch.no_grad():
+            self.load_weights(path=self.opt.path_to_weights, is_best=True)
+            
+
+            # Create big error tensor for the test set.
+            self.an_scores = torch.zeros(size=(len(self.data.inference.dataset),), dtype=torch.float32, device=self.device)
+            self.gt_labels = torch.zeros(size=(len(self.data.inference.dataset),), dtype=torch.long, device=self.device)
+            
+            print("Starting Inference!")
+            self.times = []
+            self.file_names = []
+            for i, data in tqdm(enumerate(self.data.inference), leave=False, total=len(self.data.inference)):
+                time_i = time.time()
+
+                # Forward - Pass
+                self.forward_for_testing(data)
+
+                # Calculate the anomaly score.
+                error = self.calculate_an_score()
+
+                time_o = time.time()
+
+                self.an_scores[i*self.opt.batchsize: i*self.opt.batchsize + error.size(0)] = error.reshape(error.size(0))
+                self.gt_labels[i*self.opt.batchsize: i*self.opt.batchsize + error.size(0)] = self.gt.reshape(error.size(0))
+                if self.opt.verbose:
+                    print(f'an_scores: {str(self.an_scores)}')
+                self.times.append(time_o - time_i)
+                real, fake, fixed = self.get_current_images()
+                
+                if i % self.opt.save_image_freq == 0:
+                    self.visualizer.display_current_images(real, fake, fixed, train_or_test="test_inference", global_step=i)
+                
+                self.file_names.append(data[2])
+            # Measure inference time.
+            self.times = np.array(self.times)
+            self.times = np.mean(self.times[:100] * 1000)
+
+            # Scale error vector between [0, 1] TODO: does it work without normalizing?
+            # self.an_scores = (self.an_scores - torch.min(self.an_scores))/(torch.max(self.an_scores) - torch.min(self.an_scores))
+            if self.opt.verbose:
+                print(f'scaled an_scores: {str(self.an_scores)}')
+            scores, performance = self.calculate_performance()
+                        
+            self.visualizer.plot_current_conf_matrix(1, performance["conf_matrix"])
+            self.visualizer.plot_performance(1, 0, performance)
+                
+            write_inference_result(file_names=self.file_names, y_trues=scores["labels"].numpy(), y_preds=scores["scores"].numpy(),outf=os.path.join(self.opt.outf, "classification_result.json"))
             ##
             # RETURN
             return performance
+
+    def calculate_performance(self):
+        auc, threshold, thresholds = roc(self.gt_labels, self.an_scores, output_directory=self.opt.outf, epoch=self.epoch)
+
+            # Create data frame for scores and labels.
+        scores = {}
+        scores["scores"] = self.an_scores.cpu()
+        scores["labels"] = self.gt_labels.cpu()
+        hist = pd.DataFrame.from_dict(scores)
+        hist.to_csv(self.opt.outf + "/histogram" + str(self.epoch) + ".csv")
+            ##
+            # PLOT PERFORMANCE
+        if self.opt.display:
+            plt.ion()
+
+                # Filter normal and abnormal scores.
+            abn_scr = hist.loc[hist.labels == 1]['scores']
+            nrm_scr = hist.loc[hist.labels == 0]['scores']
+
+                # Create figure and plot the distribution.
+            fig = plt.figure(figsize=(4,4))
+            sns.distplot(nrm_scr, label=r'Normal Scores')
+            sns.distplot(abn_scr, label=r'Abnormal Scores')
+            plt.axvline(threshold, 0, 1, label='anomaly score threshold', color="red")
+            plt.legend()
+            plt.yticks([])
+            plt.xlabel(r'Anomaly Scores')
+            self.visualizer.writer.add_figure("Histogram", fig, 1)
+            self.visualizer.plot_pr_curve(labels=scores["labels"], scores=scores["scores"], thresholds=thresholds, global_step=1)
+
+        aucpr = auprc(scores["labels"], scores["scores"])
+            
+        scores["scores"][scores["scores"] >= threshold] = 1
+        scores["scores"][scores["scores"] < threshold] = 0
+        precision, recall, f1_score, _ = precision_recall_fscore_support(scores["labels"], scores["scores"],
+                                                                                    average="binary", pos_label=1)
+            #### conf_matrix = [["true_normal", "false_abnormal"], ["false_normal", "true_abnormal"]]
+        conf_matrix = confusion_matrix(scores["labels"], scores["scores"])
+        performance = OrderedDict([('Avg Run Time (ms/batch)', self.times), ('AUC', auc), ('precision', precision),
+                                        ("recall", recall), ("F1_Score", f1_score), ("conf_matrix", conf_matrix), ("aucpr", aucpr),
+                                        ("threshold", threshold)])
+                                    
+        return scores, performance
+    
+    def calculate_an_score(self):
+        si = self.input.size()
+        sz = self.feat_real.size()
+        rec = (self.input - self.fake).view(si[0], si[1] * si[2] * si[3])
+        lat = (self.feat_real - self.feat_fake).view(sz[0], sz[1] * sz[2] * sz[3])
+        rec = torch.mean(torch.pow(rec, 2), dim=1)
+        lat = torch.mean(torch.pow(lat, 2), dim=1)
+        if self.opt.verbose:
+            print(f'rec: {str(rec)}')
+            print(f'lat: {str(lat)}')
+        error = 0.9*rec + 0.1*lat
+        
+        return error
+
+    

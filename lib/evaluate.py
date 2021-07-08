@@ -19,6 +19,7 @@ import matplotlib.pyplot as plt
 from matplotlib import rc
 import numpy as np
 import pandas as pd
+import json
 rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 rc('text', usetex=False)
 
@@ -47,7 +48,7 @@ def roc(labels, scores, saveto=True, output_directory="./", epoch = 0):
     #labels = labels - 1
     #print(labels)
     # True/False Positive Rates.
-    fpr, tpr, t = roc_curve(labels, scores)
+    fpr, tpr, t = roc_curve(labels, scores, pos_label=1)
     roc_auc = auc(fpr, tpr)
 
     #threshold
@@ -78,7 +79,7 @@ def roc(labels, scores, saveto=True, output_directory="./", epoch = 0):
     return roc_auc, threshold, t
 
 def auprc(labels, scores):
-    ap = average_precision_score(labels, scores)
+    ap = average_precision_score(labels, scores, pos_label=1)
     return ap
 
 def get_values_for_pr_curve(labels, scores, thresholds):
@@ -106,3 +107,19 @@ def get_values_for_pr_curve(labels, scores, thresholds):
         
     
     return np.array(tp_counts), np.array(fp_counts), np.array(tn_counts), np.array(fn_counts), np.array(precisions), np.array(recalls), len(thresholds)
+
+def write_inference_result(file_names, y_preds, y_trues, outf):
+        classification_result = {"tp": [], "fp": [], "tn": [], "fn": []}
+        for file_name, gt, anomaly_score in zip(file_names, y_trues, y_preds):
+            anomaly_score=int(anomaly_score)
+            if gt == anomaly_score == 0:
+                classification_result["tp"].append(file_name)
+            if anomaly_score == 0 and gt != anomaly_score:
+                classification_result["fp"].append(file_name)
+            if gt == anomaly_score == 1:
+                classification_result["tn"].append(file_name)
+            if anomaly_score == 1 and gt != anomaly_score:
+                classification_result["fn"].append(file_name)
+                    
+        with open(outf, "w") as file:
+            json.dump(classification_result, file, indent=4)

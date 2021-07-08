@@ -24,8 +24,6 @@ class Visualizer():
 
     ##
     def __init__(self, opt):
-        # self.opt = opt
-        self.win_size = 256
         self.name = opt.name
         self.opt = opt
         self.writer = None

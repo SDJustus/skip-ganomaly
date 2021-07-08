@@ -55,7 +55,7 @@ class Options():
         self.parser.add_argument('--save_test_images', action='store_true', help='Save test images for demo.')
         self.parser.add_argument('--load_weights', action='store_true', help='Load the pretrained weights')
         self.parser.add_argument('--resume', default='', help="path to checkpoints (to continue training)")
-        self.parser.add_argument('--phase', type=str, default='train', help='train, val, test, etc')
+        self.parser.add_argument('--phase', type=str, default='train', help='train, inference')
         self.parser.add_argument('--iter', type=int, default=0, help='Start from iteration i')
         self.parser.add_argument('--niter', type=int, default=15, help='number of epochs to train for')
         self.parser.add_argument('--niter_decay', type=int, default=100, help='# of iter to linearly decay learning rate to zero')
@@ -68,11 +68,12 @@ class Options():
         self.parser.add_argument('--lr_decay_iters', type=int, default=50, help='multiply by a gamma every lr_decay_iters iterations')
         self.isTrain = True
         self.opt = None
-        #Test
+        # Inference
         self.parser.add_argument('--path_to_weights', type=str, default=None, help='path to the weights for inference')
-        self.parser.add_argument('--image_output_path', type=str, default="", help='path where the inference images '
+        self.parser.add_argument('--image_output_path', type=str, default=None, help='path where the inference images '
                                                                                    '(classified) should be saved')
-        self.parser.add_argument('--epoch', type=str, default=None, help='epoch of weights to choose')
+        self.parser.add_argument('--threshold', type=float, default=0.5, help="Anomaly Score threshold")
+
 
     def parse(self):
         """ Parse Arguments.
