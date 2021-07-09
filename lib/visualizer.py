@@ -7,10 +7,13 @@ Returns:
 ##
 import os
 import time
+from matplotlib import pyplot as plt
 import numpy as np
+import pandas as pd
 import torchvision.utils as vutils
 from .plot import plot_confusion_matrix
 from .evaluate import get_values_for_pr_curve
+import seaborn as sns
 
 ##
 class Visualizer():
@@ -160,8 +163,8 @@ class Visualizer():
         self.writer.add_images("Reals from {} step: ".format(str(train_or_test)), reals, global_step=global_step)
         self.writer.add_images("Fakes from {} step: ".format(str(train_or_test)), fakes, global_step=global_step)
         
-    def plot_pr_curve(self, labels, scores, thresholds, global_step):
-        tp_counts, fp_counts, tn_counts, fn_counts, precisions, recalls, n_thresholds = get_values_for_pr_curve(labels, scores, thresholds)
+    def plot_pr_curve(self, y_trues, y_preds, thresholds, global_step):
+        tp_counts, fp_counts, tn_counts, fn_counts, precisions, recalls, n_thresholds = get_values_for_pr_curve(y_trues, y_preds, thresholds)
         self.writer.add_pr_curve_raw("Precision_recall_curve", true_positive_counts=tp_counts, false_positive_counts=fp_counts, true_negative_counts=tn_counts, false_negative_counts= fn_counts,
                                              precision=precisions, recall=recalls, num_thresholds=n_thresholds, global_step=global_step)
         
@@ -177,3 +180,26 @@ class Visualizer():
         vutils.save_image(reals, '%s/reals.png' % self.img_dir, normalize=True)
         vutils.save_image(fakes, '%s/fakes.png' % self.img_dir, normalize=True)
         vutils.save_image(fixed, '%s/fixed_fakes_%03d.png' %(self.img_dir, epoch+1), normalize=True)
+        
+    def plot_histogram(self, y_trues, y_preds, threshold, global_step=1, save_path=None, tag=None):
+        scores = dict()
+        scores["scores"] = y_preds
+        scores["labels"] = y_trues
+        hist = pd.DataFrame.from_dict(scores)
+        hist.to_csv(save_path if save_path else "histogram.csv")
+        
+        plt.ion()
+
+            # Filter normal and abnormal scores.
+        abn_scr = hist.loc[hist.labels == 1]['scores']
+        nrm_scr = hist.loc[hist.labels == 0]['scores']
+
+            # Create figure and plot the distribution.
+        fig = plt.figure(figsize=(4,4))
+        sns.distplot(nrm_scr, label=r'Normal Scores')
+        sns.distplot(abn_scr, label=r'Abnormal Scores')
+        plt.axvline(threshold, 0, 1, label='threshold', color="red")
+        plt.legend()
+        plt.yticks([])
+        plt.xlabel(r'Anomaly Scores')
+        self.writer.add_figure(tag if tag else "Histogram", fig, global_step)

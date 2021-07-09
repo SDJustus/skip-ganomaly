@@ -23,7 +23,7 @@ from copy import deepcopy
 from lib.models.networks import weights_init, define_G, define_D, get_scheduler
 from lib.visualizer import Visualizer
 from lib.loss import l2_loss
-from lib.evaluate import roc, auprc, write_inference_result
+from lib.evaluate import roc, auprc, write_inference_result, get_performance
 from sklearn.metrics import precision_recall_fscore_support, confusion_matrix
 import json
 #import wandb
@@ -427,7 +427,15 @@ class Skipganomaly:
             # self.an_scores = (self.an_scores - torch.min(self.an_scores))/(torch.max(self.an_scores) - torch.min(self.an_scores))
             if self.opt.verbose:
                 print(f'scaled an_scores: {str(self.an_scores)}')
-            _, performance = self.calculate_performance()
+            y_trues = self.gt_labels.cpu()
+            y_preds = self.an_scores.cpu()
+                # Create data frame for scores and labels.
+            performance, thresholds, _ = get_performance(y_trues=y_trues, y_preds=y_preds)
+            self.visualizer.plot_histogram(y_trues=y_trues, y_preds=y_preds, threshold=performance["threshold"], save_path=self.opt.outf + "histogram.csv")
+            self.visualizer.plot_pr_curve(y_trues=y_trues, y_preds=y_preds, thresholds=thresholds, global_step=1)
+                        
+            self.visualizer.plot_current_conf_matrix(1, performance["conf_matrix"])
+            self.visualizer.plot_performance(1, 0, performance)
                      
             ##
             # PLOT PERFORMANCE
@@ -489,58 +497,20 @@ class Skipganomaly:
             # self.an_scores = (self.an_scores - torch.min(self.an_scores))/(torch.max(self.an_scores) - torch.min(self.an_scores))
             if self.opt.verbose:
                 print(f'scaled an_scores: {str(self.an_scores)}')
-            scores, performance = self.calculate_performance()
+            y_trues = self.gt_labels.cpu()
+            y_preds = self.an_scores.cpu()
+                # Create data frame for scores and labels.
+            performance, thresholds, y_preds_after_threshold = get_performance(y_trues=y_trues, y_preds=y_preds)
+            self.visualizer.plot_histogram(y_trues=y_trues, y_preds=y_preds, threshold=performance["threshold"], save_path=self.opt.outf + "histogram.csv")
+            self.visualizer.plot_pr_curve(y_trues=y_trues, y_preds=y_preds, thresholds=thresholds, global_step=1)
                         
             self.visualizer.plot_current_conf_matrix(1, performance["conf_matrix"])
             self.visualizer.plot_performance(1, 0, performance)
                 
-            write_inference_result(file_names=self.file_names, y_trues=scores["labels"].numpy(), y_preds=scores["scores"].numpy(),outf=os.path.join(self.opt.outf, "classification_result.json"))
+            write_inference_result(file_names=self.file_names, y_trues=y_trues, y_preds=y_preds_after_threshold,outf=os.path.join(self.opt.outf, "classification_result.json"))
             ##
             # RETURN
             return performance
-
-    def calculate_performance(self):
-        auc, threshold, thresholds = roc(self.gt_labels, self.an_scores, output_directory=self.opt.outf, epoch=self.epoch)
-
-            # Create data frame for scores and labels.
-        scores = {}
-        scores["scores"] = self.an_scores.cpu()
-        scores["labels"] = self.gt_labels.cpu()
-        hist = pd.DataFrame.from_dict(scores)
-        hist.to_csv(self.opt.outf + "/histogram" + str(self.epoch) + ".csv")
-            ##
-            # PLOT PERFORMANCE
-        if self.opt.display:
-            plt.ion()
-
-                # Filter normal and abnormal scores.
-            abn_scr = hist.loc[hist.labels == 1]['scores']
-            nrm_scr = hist.loc[hist.labels == 0]['scores']
-
-                # Create figure and plot the distribution.
-            fig = plt.figure(figsize=(4,4))
-            sns.distplot(nrm_scr, label=r'Normal Scores')
-            sns.distplot(abn_scr, label=r'Abnormal Scores')
-            plt.axvline(threshold, 0, 1, label='anomaly score threshold', color="red")
-            plt.legend()
-            plt.yticks([])
-            plt.xlabel(r'Anomaly Scores')
-            self.visualizer.writer.add_figure("Histogram", fig, 1)
-            self.visualizer.plot_pr_curve(labels=scores["labels"], scores=scores["scores"], thresholds=thresholds, global_step=1)
-
-        aucpr = auprc(scores["labels"], scores["scores"])
-            
-        scores["scores"][scores["scores"] >= threshold] = 1
-        scores["scores"][scores["scores"] < threshold] = 0
-        precision, recall, f1_score, _ = precision_recall_fscore_support(scores["labels"], scores["scores"],
-                                                                                    average="binary", pos_label=1)
-            #### conf_matrix = [["true_normal", "false_abnormal"], ["false_normal", "true_abnormal"]]
-        conf_matrix = confusion_matrix(scores["labels"], scores["scores"])
-        performance = OrderedDict([('Avg Run Time (ms/batch)', self.times), ('AUC', auc), ('precision', precision),
-                                        ("recall", recall), ("F1_Score", f1_score), ("conf_matrix", conf_matrix), ("aucpr", aucpr),
-                                        ("threshold", threshold)])
-                                    
-        return scores, performance
     
     def calculate_an_score(self):
         si = self.input.size()
@@ -555,5 +525,3 @@ class Skipganomaly:
         error = 0.9*rec + 0.1*lat
         
         return error
-
-    
