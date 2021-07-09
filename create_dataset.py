@@ -8,7 +8,7 @@ from albumentations import (VerticalFlip, HorizontalFlip, Flip, RandomRotate90, 
                            )
 from sklearn.model_selection import train_test_split
 import argparse
-from lib.data.datasets import is_image_file
+from lib.data.dataloader import is_image_file
 import random
 import copy
 
