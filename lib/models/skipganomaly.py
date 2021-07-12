@@ -59,7 +59,7 @@ class Skipganomaly:
         # Seed for deterministic behavior
         
         print("Seed:", str(torch.seed()))
-        seed(opt.manual_seed)
+        seed(opt.manualseed)
         print("Seed:", str(torch.seed()))
         # Initalize variables.
         self.opt = opt
