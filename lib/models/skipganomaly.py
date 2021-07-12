@@ -517,11 +517,11 @@ class Skipganomaly:
             y_preds = self.an_scores.cpu()
                 # Create data frame for scores and labels.
             performance, thresholds, y_preds_after_threshold = get_performance(y_trues=y_trues, y_preds=y_preds)
-            self.visualizer.plot_histogram(y_trues=y_trues, y_preds=y_preds, threshold=performance["threshold"], save_path=self.opt.outf + "histogram.csv")
-            self.visualizer.plot_pr_curve(y_trues=y_trues, y_preds=y_preds, thresholds=thresholds, global_step=1)
+            self.visualizer.plot_histogram(y_trues=y_trues, y_preds=y_preds, threshold=performance["threshold"], save_path=self.opt.outf + "histogram_inference.csv")
+            self.visualizer.plot_pr_curve(y_trues=y_trues, y_preds=y_preds, thresholds=thresholds, global_step=1, tag="PR_Curve_inference")
                         
-            self.visualizer.plot_current_conf_matrix(1, performance["conf_matrix"])
-            self.visualizer.plot_performance(1, 0, performance)
+            self.visualizer.plot_current_conf_matrix(1, performance["conf_matrix"], tag="Confusion Matrix Inference")
+            self.visualizer.plot_performance(1, 0, performance, tag="Performance_Inference")
                 
             write_inference_result(file_names=self.file_names, y_trues=y_trues, y_preds=y_preds_after_threshold,outf=os.path.join(self.opt.outf, "classification_result.json"))
             ##

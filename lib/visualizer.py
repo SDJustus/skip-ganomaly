@@ -86,7 +86,7 @@ class Visualizer():
         
 
     ##
-    def plot_performance(self, epoch, counter_ratio, performance):
+    def plot_performance(self, epoch, counter_ratio, performance, tag=None):
         """ Plot performance
 
         Args:
@@ -95,12 +95,12 @@ class Visualizer():
             performance (OrderedDict): Performance for the current epoch.
         """
         
-        self.writer.add_scalars("Performance Metrics", {k:v for k,v in performance.items() if (k != "conf_matrix" and k != "Avg Run Time (ms/batch)")}, global_step=epoch)
+        self.writer.add_scalars(tag if tag else "Performance Metrics", {k:v for k,v in performance.items() if (k != "conf_matrix" and k != "Avg Run Time (ms/batch)")}, global_step=epoch)
             
         
-    def plot_current_conf_matrix(self, epoch, cm):
+    def plot_current_conf_matrix(self, epoch, cm, tag=None):
         plot = plot_confusion_matrix(cm, normalize=False, savefig=False)
-        self.writer.add_figure("Confusion Matrix", plot, global_step=epoch)
+        self.writer.add_figure(tag if tag else "Confusion Matrix", plot, global_step=epoch)
         
 
     ##
@@ -163,9 +163,9 @@ class Visualizer():
         self.writer.add_images("Reals from {} step: ".format(str(train_or_test)), reals, global_step=global_step)
         self.writer.add_images("Fakes from {} step: ".format(str(train_or_test)), fakes, global_step=global_step)
         
-    def plot_pr_curve(self, y_trues, y_preds, thresholds, global_step):
+    def plot_pr_curve(self, y_trues, y_preds, thresholds, global_step, tag=None):
         tp_counts, fp_counts, tn_counts, fn_counts, precisions, recalls, n_thresholds = get_values_for_pr_curve(y_trues, y_preds, thresholds)
-        self.writer.add_pr_curve_raw("Precision_recall_curve", true_positive_counts=tp_counts, false_positive_counts=fp_counts, true_negative_counts=tn_counts, false_negative_counts= fn_counts,
+        self.writer.add_pr_curve_raw(tag if tag else "Precision_recall_curve", true_positive_counts=tp_counts, false_positive_counts=fp_counts, true_negative_counts=tn_counts, false_negative_counts= fn_counts,
                                              precision=precisions, recall=recalls, num_thresholds=n_thresholds, global_step=global_step)
         
     def save_current_images(self, epoch, reals, fakes, fixed):
