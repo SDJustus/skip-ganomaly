@@ -337,7 +337,7 @@ class Skipganomaly:
         epoch_iter = 0
         for data in tqdm(self.data.train, leave=False, total=len(self.data.train)):
             self.total_steps += self.opt.batchsize
-            epoch_iter += self.opt.batchsizecd..
+            epoch_iter += self.opt.batchsize
             
 
             self.set_input(data)
