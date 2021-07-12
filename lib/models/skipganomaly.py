@@ -56,11 +56,6 @@ class Skipganomaly:
     def name(self): return 'skip-ganomaly'
 
     def __init__(self, opt, data=None):
-        # Seed for deterministic behavior
-        
-        print("Seed:", str(torch.seed()))
-        seed(opt.manualseed)
-        print("Seed:", str(torch.seed()))
         # Initalize variables.
         self.opt = opt
         self.visualizer = Visualizer(opt)

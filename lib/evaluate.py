@@ -8,6 +8,7 @@ Returns:
 ##
 # LIBRARIES
 from __future__ import print_function
+from collections import OrderedDict
 import matplotlib
 from sklearn.metrics import confusion_matrix, precision_recall_fscore_support
 matplotlib.use('Agg')
