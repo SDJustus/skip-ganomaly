@@ -368,8 +368,8 @@ class Skipganomaly:
         for self.epoch in range(self.opt.iter, self.opt.niter):
             self.train_one_epoch()
             res = self.test()
-            if res['AUC'] > best_auc:
-                best_auc = res['AUC']
+            if res['auc'] > best_auc:
+                best_auc = res['auc']
                 self.save_weights(self.epoch, is_best=True)
             self.visualizer.print_current_performance(res, best_auc)
         print(">> Training model %s.[Done]" % self.name)
