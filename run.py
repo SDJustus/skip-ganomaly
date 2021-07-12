@@ -31,6 +31,7 @@ def main():
     data = load_data(opt)
     model = load_model(opt, data)
     if opt.phase == "inference":
+        opt.batchsize=1
         model.inference()
     else:
         model.train()
