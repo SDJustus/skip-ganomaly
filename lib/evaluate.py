@@ -110,61 +110,67 @@ def get_values_for_pr_curve(y_trues, y_preds, thresholds):
     return np.array(tp_counts), np.array(fp_counts), np.array(tn_counts), np.array(fn_counts), np.array(precisions), np.array(recalls), len(thresholds)
 
 def get_performance(y_trues, y_preds):
-        fpr, tpr, t = roc_curve(y_trues, y_preds)
-        roc_score = auc(fpr, tpr)
-        ap = average_precision_score(y_trues, y_preds, pos_label=1)
-        recall_dict = dict()
-        precisions = [0.996, 0.99, 0.95, 0.9]
+    fpr, tpr, t = roc_curve(y_trues, y_preds)
+    roc_score = auc(fpr, tpr)
+    ap = average_precision_score(y_trues, y_preds, pos_label=1)
+    recall_dict = dict()
+    precisions = [0.996, 0.99, 0.95, 0.9]
+    temp_dict=dict()
+    
+    for th in t:
+        y_preds_new = [1 if ele >= th else 0 for ele in y_preds] 
+        if len(set(y_preds_new)) == 1:
+            print("y_preds_new did only contain the element {}... Continuing with next iteration!".format(y_preds_new[0]))
+            continue
         
-        for p in precisions:
-            for th in t:
-                y_preds_new = [1 if ele >= th else 0 for ele in y_preds] 
-                if len(set(y_preds_new)) == 1:
-                    print("y_preds_new did only contain the element {}... Continuing with next iteration!".format(y_preds_new[0]))
-                    continue
-                
-                precision, recall, _, _ = precision_recall_fscore_support(y_trues, y_preds_new, average="binary", pos_label=1)
-                if precision<=p:
-                    print(f"writing {p}; {precision}")
-                    recall_dict["recall at pr="+str(p)+"(real_value="+str(precision)+")"] = recall
-                    break
-        
-        
-        #Threshold
-        i = np.arange(len(tpr))
-        roc = pd.DataFrame({'tf': pd.Series(tpr - (1 - fpr), index=i), 'threshold': pd.Series(t, index=i)})
-        roc_t = roc.iloc[(roc.tf - 0).abs().argsort()[:1]]
-        threshold = roc_t['threshold']
-        threshold = list(threshold)[0]
-        
-        
-        
-        y_preds = [1 if ele >= threshold else 0 for ele in y_preds] 
-        
-        
-        precision, recall, f1_score, _ = precision_recall_fscore_support(y_trues, y_preds, average="binary", pos_label=1)
-        f05_score = fbeta_score(y_trues, y_preds, beta=0.5, average="binary", pos_label=1)
-        #### conf_matrix = [["true_normal", "false_abnormal"], ["false_normal", "true_abnormal"]]     
-        conf_matrix = confusion_matrix(y_trues, y_preds)
-        performance = OrderedDict([ ('auc', roc_score), ("ap", ap), ('precision', precision),
-                                    ("recall", recall), ("f1_score", f1_score), ("f05_score", f05_score), ("conf_matrix", conf_matrix),
-                                    ("threshold", threshold)])
-        performance.update(recall_dict)
-                                    
-        return performance, t, y_preds
+        precision, recall, _, _ = precision_recall_fscore_support(y_trues, y_preds_new, average="binary", pos_label=1)
+        temp_dict[str(precision)] = recall
+    p_dict = OrderedDict(sorted(temp_dict.items(), reverse=True))
+    for p in precisions:   
+        for precision, recall in p_dict.items(): 
+            if precision<=p:
+                print(f"writing {p}; {precision}")
+                recall_dict["recall at pr="+str(p)+"(real_value="+str(precision)+")"] = recall
+                break
+            else:
+                continue
+    
+    
+    #Threshold
+    i = np.arange(len(tpr))
+    roc = pd.DataFrame({'tf': pd.Series(tpr - (1 - fpr), index=i), 'threshold': pd.Series(t, index=i)})
+    roc_t = roc.iloc[(roc.tf - 0).abs().argsort()[:1]]
+    threshold = roc_t['threshold']
+    threshold = list(threshold)[0]
+    
+    
+    
+    y_preds = [1 if ele >= threshold else 0 for ele in y_preds] 
+    
+    
+    precision, recall, f1_score, _ = precision_recall_fscore_support(y_trues, y_preds, average="binary", pos_label=1)
+    f05_score = fbeta_score(y_trues, y_preds, beta=0.5, average="binary", pos_label=1)
+    #### conf_matrix = [["true_normal", "false_abnormal"], ["false_normal", "true_abnormal"]]     
+    conf_matrix = confusion_matrix(y_trues, y_preds)
+    performance = OrderedDict([ ('auc', roc_score), ("ap", ap), ('precision', precision),
+                                ("recall", recall), ("f1_score", f1_score), ("f05_score", f05_score), ("conf_matrix", conf_matrix),
+                                ("threshold", threshold)])
+    performance.update(recall_dict)
+                                
+    return performance, t, y_preds
 
 def write_inference_result(file_names, y_preds, y_trues, outf):
-        classification_result = {"tp": [], "fp": [], "tn": [], "fn": []}
-        for file_name, gt, anomaly_score in zip(file_names, y_trues, y_preds):
-            anomaly_score=int(anomaly_score)
-            if gt == anomaly_score == 0:
-                classification_result["tp"].append(file_name)
-            if anomaly_score == 0 and gt != anomaly_score:
-                classification_result["fp"].append(file_name)
-            if gt == anomaly_score == 1:
-                classification_result["tn"].append(file_name)
-            if anomaly_score == 1 and gt != anomaly_score:
-                classification_result["fn"].append(file_name)
-                    
-        with open(outf, "w") as file:
-            json.dump(classification_result, file, indent=4)
+    classification_result = {"tp": [], "fp": [], "tn": [], "fn": []}
+    for file_name, gt, anomaly_score in zip(file_names, y_trues, y_preds):
+        anomaly_score=int(anomaly_score)
+        if gt == anomaly_score == 0:
+            classification_result["tp"].append(file_name)
+        if anomaly_score == 0 and gt != anomaly_score:
+            classification_result["fp"].append(file_name)
+        if gt == anomaly_score == 1:
+            classification_result["tn"].append(file_name)
+        if anomaly_score == 1 and gt != anomaly_score:
+            classification_result["fn"].append(file_name)
+                
+    with open(outf, "w") as file:
+        json.dump(classification_result, file, indent=4)
