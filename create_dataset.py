@@ -209,8 +209,7 @@ if __name__ == '__main__':
     if "all" in config["model"]:
         generate_dataset(train_normal=train_normal, test_normal=test_normal, train_abnormal=train_abnormal, test_abnormal=test_abnormal, dataset_name=config["dataset_name"] + "_classification" + "_" + str(config["seed"]), img_shape=img_shape, inference_normal=inference_normal, inference_abnormal=inference_abnormal)
         if config["train_test_inference"]:
-            test_normal, inference_normal = train_test_split(test_normal, test_size=0.5, shuffle=True, random_state=config["seed"])
-            test_abnormal, inference_abnormal = train_test_split(np.concatenate((train_abnormal, test_abnormal)), test_size=0.5, shuffle=True, random_state=config["seed"])
+            test_abnormal, inference_abnormal = train_test_split(np.concatenate((train_abnormal, test_abnormal, inference_abnormal)), test_size=0.5, shuffle=True, random_state=config["seed"])
             
             print("test_abnormal", len(test_abnormal))
             print("inference_abnormal", len(inference_abnormal))
@@ -219,8 +218,7 @@ if __name__ == '__main__':
         generate_dataset(train_normal=train_normal, test_normal=test_normal, train_abnormal=train_abnormal, test_abnormal=test_abnormal, dataset_name=config["dataset_name"] + "_" + config["model"] + "_" + str(config["seed"]), img_shape=img_shape, inference_normal=inference_normal, inference_abnormal=inference_abnormal)
     elif "skip" in config["model"]:
         if config["train_test_inference"]:
-            test_normal, inference_normal = train_test_split(test_normal, test_size=0.5, shuffle=True, random_state=config["seed"])
-            test_abnormal, inference_abnormal = train_test_split(np.concatenate((train_abnormal, test_abnormal)), test_size=0.5, shuffle=True, random_state=config["seed"])
+            test_abnormal, inference_abnormal = train_test_split(np.concatenate((train_abnormal, test_abnormal, inference_abnormal)), test_size=0.5, shuffle=True, random_state=config["seed"])
             print("inference_normal", len(inference_normal))
             print("train_abnormal", len(train_abnormal))
         generate_dataset(train_normal=train_normal, test_normal=test_normal, test_abnormal=test_abnormal, dataset_name=config["dataset_name"] + "_" + config["model"] + "_" + str(config["seed"]), img_shape=img_shape, inference_normal=inference_normal, inference_abnormal=inference_abnormal)
