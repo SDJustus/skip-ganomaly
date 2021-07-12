@@ -29,7 +29,26 @@ import json
 #import wandb
 
 
+def seed(seed_value):
+    """ Seed 
 
+    Arguments:
+        seed_value {int} -- [description]
+    """
+    # Check if seed is default value
+    if seed_value == -1:
+        return
+
+    # Otherwise seed all functionality
+    import random
+    random.seed(seed_value)
+    torch.manual_seed(seed_value)
+    torch.cuda.manual_seed(seed_value)
+    torch.cuda.manual_seed_all(seed_value)
+    np.random.seed(seed_value)
+    torch.backends.cudnn.benchmark = False
+    torch.backends.cudnn.deterministic = True
+    print("set seed to {}".format(str(seed_value)))
 class Skipganomaly:
     """Skip-GANomaly Class
     """
@@ -39,6 +58,8 @@ class Skipganomaly:
     def __init__(self, opt, data=None):
         # Seed for deterministic behavior
         
+        print("Seed:", str(torch.seed()))
+        seed(opt.manual_seed)
         print("Seed:", str(torch.seed()))
         # Initalize variables.
         self.opt = opt
@@ -316,8 +337,8 @@ class Skipganomaly:
         epoch_iter = 0
         for data in tqdm(self.data.train, leave=False, total=len(self.data.train)):
             self.total_steps += self.opt.batchsize
-            epoch_iter += self.opt.batchsize
-            print(data[2])
+            epoch_iter += self.opt.batchsizecd..
+            
 
             self.set_input(data)
             self.optimize_params()
