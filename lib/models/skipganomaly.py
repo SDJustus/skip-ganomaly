@@ -217,8 +217,8 @@ class Skipganomaly:
             fname_d = f"netD_{epoch}.pth"
 
         if path is None:
-            path_g = f"{self.opt.outf}/{self.name}/{self.opt.dataset}/train/weights/{fname_g}"
-            path_d = f"{self.opt.outf}/{self.name}/{self.opt.dataset}/train/weights/{fname_d}"
+            path_g = f"{self.opt.outf}/skipganomaly/{self.opt.dataset}/train/weights/{fname_g}"
+            path_d = f"{self.opt.outf}/skipganomaly/{self.opt.dataset}/train/weights/{fname_d}"
 
         else:
             path_g = path + "/" + fname_g
@@ -447,7 +447,7 @@ class Skipganomaly:
             y_preds = self.an_scores.cpu()
                 # Create data frame for scores and labels.
             performance, thresholds, _ = get_performance(y_trues=y_trues, y_preds=y_preds)
-            self.visualizer.plot_histogram(y_trues=y_trues, y_preds=y_preds, threshold=performance["threshold"], save_path=self.opt.outf + "histogram.csv")
+            self.visualizer.plot_histogram(y_trues=y_trues, y_preds=y_preds, threshold=performance["threshold"], save_path=self.opt.outf + "histogram_"+str(self.epoch)+".csv")
             self.visualizer.plot_pr_curve(y_trues=y_trues, y_preds=y_preds, thresholds=thresholds, global_step=1)
                         
             self.visualizer.plot_current_conf_matrix(1, performance["conf_matrix"])
