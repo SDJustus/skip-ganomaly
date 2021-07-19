@@ -447,17 +447,12 @@ class Skipganomaly:
             y_preds = self.an_scores.cpu()
                 # Create data frame for scores and labels.
             performance, thresholds, _ = get_performance(y_trues=y_trues, y_preds=y_preds)
-            self.visualizer.plot_histogram(y_trues=y_trues, y_preds=y_preds, threshold=performance["threshold"], save_path=self.opt.outf + "histogram_"+str(self.epoch)+".csv")
-            self.visualizer.plot_pr_curve(y_trues=y_trues, y_preds=y_preds, thresholds=thresholds, global_step=1)
+            self.visualizer.plot_histogram(y_trues=y_trues, y_preds=y_preds, threshold=performance["threshold"], save_path=self.opt.outf + "histogram_"+str(self.epoch)+".csv", tag="Histogram_Test", global_step=self.epoch)
+            self.visualizer.plot_pr_curve(y_trues=y_trues, y_preds=y_preds, thresholds=thresholds, global_step=self.epoch, tag="PR_Curve_Test")
+            self.visualizer.plot_roc_curve(y_trues=y_trues, y_preds=y_preds, global_step=self.epoch, tag="ROC_Curve_Test")
                         
-            self.visualizer.plot_current_conf_matrix(1, performance["conf_matrix"])
-            self.visualizer.plot_performance(1, 0, performance)
-                     
-            ##
-            # PLOT PERFORMANCE
-            if self.opt.display:
-                self.visualizer.plot_current_conf_matrix(self.epoch, performance["conf_matrix"])
-                self.visualizer.plot_performance(self.epoch, 0, performance)
+            self.visualizer.plot_current_conf_matrix(self.epoch, performance["conf_matrix"], tag="Confusion_Matrix_Test")
+            self.visualizer.plot_performance(self.epoch, 0, performance, tag="Performance_Test")
             return performance
 
     def forward_for_testing(self, data):
@@ -517,11 +512,13 @@ class Skipganomaly:
             y_preds = self.an_scores.cpu()
                 # Create data frame for scores and labels.
             performance, thresholds, y_preds_after_threshold = get_performance(y_trues=y_trues, y_preds=y_preds)
-            self.visualizer.plot_histogram(y_trues=y_trues, y_preds=y_preds, threshold=performance["threshold"], save_path=self.opt.outf + "histogram_inference.csv")
-            self.visualizer.plot_pr_curve(y_trues=y_trues, y_preds=y_preds, thresholds=thresholds, global_step=1, tag="PR_Curve_inference")
-                        
-            self.visualizer.plot_current_conf_matrix(1, performance["conf_matrix"], tag="Confusion Matrix Inference")
+            self.visualizer.plot_histogram(y_trues=y_trues, y_preds=y_preds, threshold=performance["threshold"], save_path=self.opt.outf + "histogram_inference.csv", tag="Histogram_Inference")
+            self.visualizer.plot_pr_curve(y_trues=y_trues, y_preds=y_preds, thresholds=thresholds, global_step=1, tag="PR_Curve_Inference")
+            self.visualizer.plot_roc_curve(y_trues=y_trues, y_preds=y_preds, global_step=1, tag="ROC_Curve_Inference")
+            
+            self.visualizer.plot_current_conf_matrix(1, performance["conf_matrix"], tag="Confusion_Matrix_Inference")
             self.visualizer.plot_performance(1, 0, performance, tag="Performance_Inference")
+            
                 
             write_inference_result(file_names=self.file_names, y_trues=y_trues, y_preds=y_preds_after_threshold,outf=os.path.join(self.opt.outf, "classification_result.json"))
             ##
