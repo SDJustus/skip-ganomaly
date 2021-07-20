@@ -26,7 +26,7 @@ class Options():
 
         ##
         # Base
-        self.parser.add_argument('--dataset', default='cifar10', help='folder | cifar10 | mnist ')
+        self.parser.add_argument('--dataset', default=None, help='folder | cifar10 | mnist ')
         self.parser.add_argument('--dataroot', default='', help='path to dataset')        
         self.parser.add_argument('--path', default='', help='path to the folder or image to be predicted.')
         self.parser.add_argument('--batchsize', type=int, default=64, help='input batch size')
