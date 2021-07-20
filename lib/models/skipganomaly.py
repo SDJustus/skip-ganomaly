@@ -217,8 +217,9 @@ class Skipganomaly:
             fname_d = f"netD_{epoch}.pth"
 
         if path is None:
-            path_g = f"{self.opt.outf}/skipganomaly/{self.opt.dataset}/train/weights/{fname_g}"
-            path_d = f"{self.opt.outf}/skipganomaly/{self.opt.dataset}/train/weights/{fname_d}"
+            name = self.opt.dataset if self.opt.dataset else self.opt.dataroot.split("/")[-1]
+            path_g = f"{self.opt.outf}/skipganomaly/{name}/train/weights/{fname_g}"
+            path_d = f"{self.opt.outf}/skipganomaly/{name}/train/weights/{fname_d}"
 
         else:
             path_g = path + "/" + fname_g
