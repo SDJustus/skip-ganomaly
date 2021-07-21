@@ -180,9 +180,9 @@ class Skipganomaly:
         Args:
             epoch ([int]): Current epoch number.
         """
-
+        name = self.opt.dataset if self.opt.dataset else self.opt.dataroot.split("/")[-1]
         weight_dir = os.path.join(
-            self.opt.outf, self.opt.name, 'train', 'weights')
+            self.opt.outf, name, 'train', 'weights')
         if not os.path.exists(weight_dir):
             os.makedirs(weight_dir)
 
