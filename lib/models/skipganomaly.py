@@ -477,10 +477,12 @@ class Skipganomaly:
             self.gt_labels = torch.zeros(size=(len(self.data.inference.dataset),), dtype=torch.long, device=self.device)
             
             print("Starting Inference!")
-            self.times = []
+            inf_time = None
+            inf_times = []
+            
             self.file_names = []
             for i, data in tqdm(enumerate(self.data.inference), leave=False, total=len(self.data.inference)):
-                time_i = time.time()
+                inf_start = time.time()
 
                 # Forward - Pass
                 self.forward_for_testing(data)
@@ -488,13 +490,12 @@ class Skipganomaly:
                 # Calculate the anomaly score.
                 error = self.calculate_an_score()
 
-                time_o = time.time()
+                inf_times.append(time.time()-inf_start)
 
                 self.an_scores[i*self.opt.batchsize: i*self.opt.batchsize + error.size(0)] = error.reshape(error.size(0))
                 self.gt_labels[i*self.opt.batchsize: i*self.opt.batchsize + error.size(0)] = self.gt.reshape(error.size(0))
                 if self.opt.verbose:
                     print(f'an_scores: {str(self.an_scores)}')
-                self.times.append(time_o - time_i)
                 real, fake, fixed = self.get_current_images()
                 
                 if i % self.opt.save_image_freq == 0:
@@ -502,8 +503,8 @@ class Skipganomaly:
                 
                 self.file_names.append(data[2])
             # Measure inference time.
-            self.times = np.array(self.times)
-            self.times = np.mean(self.times[:100] * 1000)
+            
+            
 
             # Scale error vector between [0, 1] TODO: does it work without normalizing?
             # self.an_scores = (self.an_scores - torch.min(self.an_scores))/(torch.max(self.an_scores) - torch.min(self.an_scores))
@@ -511,6 +512,9 @@ class Skipganomaly:
                 print(f'scaled an_scores: {str(self.an_scores)}')
             y_trues = self.gt_labels.cpu()
             y_preds = self.an_scores.cpu()
+            inf_time = sum(inf_times)
+            print (f'Inference time: {inf_time} secs')
+            print (f'Inference time / individual: {inf_time/len(y_trues)} secs')
                 # Create data frame for scores and labels.
             performance, thresholds, y_preds_after_threshold = get_performance(y_trues=y_trues, y_preds=y_preds)
             self.visualizer.plot_histogram(y_trues=y_trues, y_preds=y_preds, threshold=performance["threshold"], save_path=self.opt.outf + "histogram_inference.csv", tag="Histogram_Inference")
