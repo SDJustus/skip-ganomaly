@@ -84,7 +84,8 @@ def load_data(opt):
     transform = transforms.Compose([transforms.Resize(opt.isize),
                                     transforms.CenterCrop(opt.isize),
                                     transforms.ToTensor(),
-                                    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)), ])
+                                    #transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)), # done in preprocessing
+                                    ])
     train_dl = None
     valid_dl = None
     inference_dl = None
