@@ -274,7 +274,7 @@ class Skipganomaly:
         """
         self.err_g_adv = self.opt.w_adv * self.l_adv(self.pred_fake, self.real_label)
         self.err_g_con = self.opt.w_con * self.l_con(self.fake, self.input)
-        self.err_g_lat = self.opt.w_lat * self.l_lat(self.feat_fake, self.feat_real)
+        self.err_g_lat = self.opt.w_lat * self.l_lat(self.feat_fake, self.feat_real) # should be named discriminator
         if self.opt.verbose:
             print(f'err_g_adv: {str(self.err_g_adv)}')
             print(f'err_g_con: {str(self.err_g_con)}')
@@ -285,6 +285,10 @@ class Skipganomaly:
 
     def backward_d(self):
         # Fake
+        #print(f'pref_fake: {str(self.pred_fake)}')
+        #print(f'self.fake_label: {str(self.fake_label)}')
+        #print(f'self.pred_real: {str(self.pred_real)}')
+        #print(f'self.real_label: {str(self.real_label)}')
         self.err_d_fake = self.l_adv(self.pred_fake, self.fake_label)
 
         # Real
@@ -537,6 +541,8 @@ class Skipganomaly:
         lat = (self.feat_real - self.feat_fake).view(sz[0], sz[1] * sz[2] * sz[3])
         rec = torch.mean(torch.pow(rec, 2), dim=1)
         lat = torch.mean(torch.pow(lat, 2), dim=1)
+        #print("lat", lat)
+        #print("rec", rec)
         if self.opt.verbose:
             print(f'rec: {str(rec)}')
             print(f'lat: {str(lat)}')
