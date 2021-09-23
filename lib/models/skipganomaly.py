@@ -246,6 +246,9 @@ class Skipganomaly:
                 name = k[7:]  # remove `module.`
                 new_weights_d[name] = v
             # load params
+            if len(self.opt.gpu_ids) == 0:
+                weights_g = new_weights_g
+                weights_d = new_weights_d
             self.netg.load_state_dict(weights_g)
             self.netd.load_state_dict(weights_d)
         except IOError:
@@ -493,7 +496,7 @@ class Skipganomaly:
 
                 # Calculate the anomaly score.
                 error = self.calculate_an_score()
-
+                
                 inf_times.append(time.time()-inf_start)
 
                 self.an_scores[i*self.opt.batchsize: i*self.opt.batchsize + error.size(0)] = error.reshape(error.size(0))
@@ -508,32 +511,32 @@ class Skipganomaly:
                 self.file_names.append(data[2])
             # Measure inference time.
             
-            
-
-            # Scale error vector between [0, 1] TODO: does it work without normalizing?
-            # self.an_scores = (self.an_scores - torch.min(self.an_scores))/(torch.max(self.an_scores) - torch.min(self.an_scores))
-            if self.opt.verbose:
-                print(f'scaled an_scores: {str(self.an_scores)}')
-            y_trues = self.gt_labels.cpu()
-            y_preds = self.an_scores.cpu()
-            inf_time = sum(inf_times)
-            print (f'Inference time: {inf_time} secs')
-            print (f'Inference time / individual: {inf_time/len(y_trues)} secs')
-                # Create data frame for scores and labels.
-            performance, thresholds, y_preds_after_threshold = get_performance(y_trues=y_trues, y_preds=y_preds)
-            self.visualizer.plot_histogram(y_trues=y_trues, y_preds=y_preds, threshold=performance["threshold"], save_path=self.opt.outf + "histogram_inference.csv", tag="Histogram_Inference")
-            self.visualizer.plot_pr_curve(y_trues=y_trues, y_preds=y_preds, thresholds=thresholds, global_step=1, tag="PR_Curve_Inference")
-            self.visualizer.plot_roc_curve(y_trues=y_trues, y_preds=y_preds, global_step=1, tag="ROC_Curve_Inference")
-            
-            self.visualizer.plot_current_conf_matrix(1, performance["conf_matrix"], tag="Confusion_Matrix_Inference")
-            self.visualizer.plot_performance(1, 0, performance, tag="Performance_Inference")
-            
                 
-            write_inference_result(file_names=self.file_names, y_trues=y_trues, y_preds=y_preds_after_threshold,outf=os.path.join(self.opt.outf, "classification_result.json"))
-            ##
-            # RETURN
-            return performance
-    
+
+        # Scale error vector between [0, 1] TODO: does it work without normalizing?
+        # self.an_scores = (self.an_scores - torch.min(self.an_scores))/(torch.max(self.an_scores) - torch.min(self.an_scores))
+        if self.opt.verbose:
+            print(f'scaled an_scores: {str(self.an_scores)}')
+        y_trues = self.gt_labels.cpu()
+        y_preds = self.an_scores.cpu()
+        inf_time = sum(inf_times)
+        print (f'Inference time: {inf_time} secs')
+        print (f'Inference time / individual: {inf_time/len(y_trues)} secs')
+            # Create data frame for scores and labels.
+        performance, thresholds, y_preds_after_threshold = get_performance(y_trues=y_trues, y_preds=y_preds)
+        self.visualizer.plot_histogram(y_trues=y_trues, y_preds=y_preds, threshold=performance["threshold"], save_path=self.opt.outf + "histogram_inference.csv", tag="Histogram_Inference")
+        self.visualizer.plot_pr_curve(y_trues=y_trues, y_preds=y_preds, thresholds=thresholds, global_step=1, tag="PR_Curve_Inference")
+        self.visualizer.plot_roc_curve(y_trues=y_trues, y_preds=y_preds, global_step=1, tag="ROC_Curve_Inference")
+        
+        self.visualizer.plot_current_conf_matrix(1, performance["conf_matrix"], tag="Confusion_Matrix_Inference")
+        self.visualizer.plot_performance(1, 0, performance, tag="Performance_Inference")
+        
+            
+        write_inference_result(file_names=self.file_names, y_trues=y_trues, y_preds=y_preds_after_threshold,outf=os.path.join(self.opt.outf, "classification_result.json"))
+        ##
+        # RETURN
+        return performance
+
     def calculate_an_score(self):
         si = self.input.size()
         sz = self.feat_real.size()
