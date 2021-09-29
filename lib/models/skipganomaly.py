@@ -445,7 +445,7 @@ class Skipganomaly:
                 i = i + 1
             # Measure inference time.
             self.times = np.array(self.times)
-            self.times = np.mean(self.times[:100] * 1000)
+            self.times = np.mean(self.times * 1000)
 
             # Scale error vector between [0, 1]
             # self.an_scores = (self.an_scores - torch.min(self.an_scores))/(torch.max(self.an_scores) - torch.min(self.an_scores))
