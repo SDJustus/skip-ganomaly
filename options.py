@@ -73,6 +73,7 @@ class Options():
         self.parser.add_argument('--image_output_path', type=str, default=None, help='path where the inference images '
                                                                                    '(classified) should be saved')
         self.parser.add_argument('--threshold', type=float, default=0.5, help="Anomaly Score threshold")
+        self.parser.add_argument("--decision_threshold", type=float, default=None, help="set the decision threshold for the anomaly score manually. If not set, it is computed by AUROC-Metric")
 
 
     def parse(self):
