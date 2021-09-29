@@ -454,7 +454,7 @@ class Skipganomaly:
             y_trues = self.gt_labels.cpu()
             y_preds = self.an_scores.cpu()
                 # Create data frame for scores and labels.
-            performance, thresholds, _ = get_performance(y_trues=y_trues, y_preds=y_preds)
+            performance, thresholds, _ = get_performance(y_trues=y_trues, y_preds=y_preds, manual_threshold=self.opt.decision_threshold)
             self.visualizer.plot_histogram(y_trues=y_trues, y_preds=y_preds, threshold=performance["threshold"], save_path=self.opt.outf + "histogram_"+str(self.epoch)+".csv", tag="Histogram_Test", global_step=self.epoch)
             self.visualizer.plot_pr_curve(y_trues=y_trues, y_preds=y_preds, thresholds=thresholds, global_step=self.epoch, tag="PR_Curve_Test")
             self.visualizer.plot_roc_curve(y_trues=y_trues, y_preds=y_preds, global_step=self.epoch, tag="ROC_Curve_Test")
@@ -523,7 +523,7 @@ class Skipganomaly:
         print (f'Inference time: {inf_time} secs')
         print (f'Inference time / individual: {inf_time/len(y_trues)} secs')
             # Create data frame for scores and labels.
-        performance, thresholds, y_preds_after_threshold = get_performance(y_trues=y_trues, y_preds=y_preds)
+        performance, thresholds, y_preds_after_threshold = get_performance(y_trues=y_trues, y_preds=y_preds, manual_threshold=self.opt.decision_threshold)
         self.visualizer.plot_histogram(y_trues=y_trues, y_preds=y_preds, threshold=performance["threshold"], save_path=self.opt.outf + "histogram_inference.csv", tag="Histogram_Inference")
         self.visualizer.plot_pr_curve(y_trues=y_trues, y_preds=y_preds, thresholds=thresholds, global_step=1, tag="PR_Curve_Inference")
         self.visualizer.plot_roc_curve(y_trues=y_trues, y_preds=y_preds, global_step=1, tag="ROC_Curve_Inference")
