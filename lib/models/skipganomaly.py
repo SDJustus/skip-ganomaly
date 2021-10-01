@@ -461,7 +461,7 @@ class Skipganomaly:
                 f.close()
             self.visualizer.plot_histogram(y_trues=y_trues, y_preds=y_preds, threshold=performance["threshold"], save_path=os.path.join(self.opt.outf, "histogram_test"+str(self.epoch)+".png"), tag="Histogram_Test", global_step=self.epoch)
             self.visualizer.plot_pr_curve(y_trues=y_trues, y_preds=y_preds, thresholds=thresholds, global_step=self.epoch, tag="PR_Curve_Test")
-            self.visualizer.plot_roc_curve(y_trues=y_trues, y_preds=y_preds, global_step=self.epoch, tag="ROC_Curve_Test")
+            self.visualizer.plot_roc_curve(y_trues=y_trues, y_preds=y_preds, global_step=self.epoch, tag="ROC_Curve_Test", save_path=os.path.join(self.opt.outf, "roc_test"+str(self.epoch)+".png"))
                         
             self.visualizer.plot_current_conf_matrix(self.epoch, performance["conf_matrix"], tag="Confusion_Matrix_Test")
             
@@ -535,7 +535,7 @@ class Skipganomaly:
             f.close()
         self.visualizer.plot_histogram(y_trues=y_trues, y_preds=y_preds, threshold=performance["threshold"], save_path=os.path.join(self.opt.outf, "histogram_inference.png"), tag="Histogram_Inference")
         self.visualizer.plot_pr_curve(y_trues=y_trues, y_preds=y_preds, thresholds=thresholds, global_step=1, tag="PR_Curve_Inference")
-        self.visualizer.plot_roc_curve(y_trues=y_trues, y_preds=y_preds, global_step=1, tag="ROC_Curve_Inference")
+        self.visualizer.plot_roc_curve(y_trues=y_trues, y_preds=y_preds, global_step=1, tag="ROC_Curve_Inference", save_path=os.path.join(self.opt.outf, "roc_inference.png"))
         
         self.visualizer.plot_current_conf_matrix(1, performance["conf_matrix"], tag="Confusion_Matrix_Inference")
         if self.opt.decision_threshold:

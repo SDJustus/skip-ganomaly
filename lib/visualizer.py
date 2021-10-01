@@ -204,7 +204,7 @@ class Visualizer():
         plt.savefig(save_path)
         self.writer.add_figure(tag if tag else "Histogram", fig, global_step)
 
-    def plot_roc_curve(self, y_trues, y_preds, global_step=1, tag=None):
+    def plot_roc_curve(self, y_trues, y_preds, global_step=1, tag=None, save_path=None):
         fpr, tpr, roc_auc = get_values_for_roc_curve(y_trues, y_preds)
         fig = plt.figure(figsize=(4,4))
         lw = 2
@@ -216,4 +216,6 @@ class Visualizer():
         plt.ylabel('True Positive Rate')
         plt.title('Receiver operating characteristic')
         plt.legend(loc="lower right")
+        if save_path:
+            plt.savefig(save_path)
         self.writer.add_figure(tag if tag else "ROC-Curve", fig, global_step)
