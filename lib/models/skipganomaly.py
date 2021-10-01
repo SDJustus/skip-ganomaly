@@ -459,7 +459,7 @@ class Skipganomaly:
                 f.write(str(performance))
                 f.write("\n")
                 f.close()
-            self.visualizer.plot_histogram(y_trues=y_trues, y_preds=y_preds, threshold=performance["threshold"], save_path=self.opt.outf + "histogram_"+str(self.epoch)+".csv", tag="Histogram_Test", global_step=self.epoch)
+            self.visualizer.plot_histogram(y_trues=y_trues, y_preds=y_preds, threshold=performance["threshold"], save_path=os.path.join(self.opt.outf, "histogram_test"+str(self.epoch)+".png"), tag="Histogram_Test", global_step=self.epoch)
             self.visualizer.plot_pr_curve(y_trues=y_trues, y_preds=y_preds, thresholds=thresholds, global_step=self.epoch, tag="PR_Curve_Test")
             self.visualizer.plot_roc_curve(y_trues=y_trues, y_preds=y_preds, global_step=self.epoch, tag="ROC_Curve_Test")
                         
@@ -533,14 +533,14 @@ class Skipganomaly:
         with open(os.path.join(self.opt.outf, self.opt.phase +"_results.txt"), "w") as f:
             f.write(str(performance))
             f.close()
-        self.visualizer.plot_histogram(y_trues=y_trues, y_preds=y_preds, threshold=performance["threshold"], save_path=self.opt.outf + "histogram_inference.csv", tag="Histogram_Inference")
+        self.visualizer.plot_histogram(y_trues=y_trues, y_preds=y_preds, threshold=performance["threshold"], save_path=os.path.join(self.opt.outf, "histogram_inference.png"), tag="Histogram_Inference")
         self.visualizer.plot_pr_curve(y_trues=y_trues, y_preds=y_preds, thresholds=thresholds, global_step=1, tag="PR_Curve_Inference")
         self.visualizer.plot_roc_curve(y_trues=y_trues, y_preds=y_preds, global_step=1, tag="ROC_Curve_Inference")
         
         self.visualizer.plot_current_conf_matrix(1, performance["conf_matrix"], tag="Confusion_Matrix_Inference")
         if self.opt.decision_threshold:
             self.visualizer.plot_current_conf_matrix(2, performance["conf_matrix_man"])
-            self.visualizer.plot_histogram(y_trues=y_trues, y_preds=y_preds, threshold=performance["manual_threshold"], global_step=2, save_path=self.opt.outf + "histogram_inference.csv", tag="Histogram_Inference")
+            self.visualizer.plot_histogram(y_trues=y_trues, y_preds=y_preds, threshold=performance["manual_threshold"], global_step=2, save_path=os.path.join(self.opt.outf, "histogram_inference_man.png"), tag="Histogram_Inference")
         self.visualizer.plot_performance(1, 0, performance, tag="Performance_Inference")
         
             

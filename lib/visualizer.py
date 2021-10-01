@@ -99,7 +99,7 @@ class Visualizer():
             
         
     def plot_current_conf_matrix(self, epoch, cm, tag=None):
-        plot = plot_confusion_matrix(cm, normalize=False, savefig=False)
+        plot = plot_confusion_matrix(cm, normalize=False, save_path=os.path.join(self.opt.outf, self.opt.phase+"_conf_matrix.png"))
         self.writer.add_figure(tag if tag else "Confusion Matrix", plot, global_step=epoch)
         
 
@@ -186,7 +186,6 @@ class Visualizer():
         scores["scores"] = y_preds
         scores["labels"] = y_trues
         hist = pd.DataFrame.from_dict(scores)
-        hist.to_csv(save_path if save_path else "histogram.csv")
         
         plt.ion()
 
@@ -202,6 +201,7 @@ class Visualizer():
         plt.legend()
         plt.yticks([])
         plt.xlabel(r'Anomaly Scores')
+        plt.savefig(save_path)
         self.writer.add_figure(tag if tag else "Histogram", fig, global_step)
 
     def plot_roc_curve(self, y_trues, y_preds, global_step=1, tag=None):

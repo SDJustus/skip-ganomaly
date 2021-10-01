@@ -13,10 +13,9 @@ from sklearn.metrics import confusion_matrix
 
 def plot_confusion_matrix(cm,
                           target_names=["Normal", "Abnormal"],
-                          title='Confusion matrix',
                           cmap=None,
                           normalize=True,
-                          savefig = True):
+                          save_path = None):
     """
     given a sklearn confusion matrix (cm), make a nice plot
 
@@ -87,8 +86,8 @@ def plot_confusion_matrix(cm,
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
     plt.tight_layout()
-    if savefig:
-        plt.savefig(title+".png")
+    if save_path:
+        plt.savefig(save_path)
     plt.close()
     return figure
 
