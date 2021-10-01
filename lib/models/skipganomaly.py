@@ -460,6 +460,7 @@ class Skipganomaly:
             self.visualizer.plot_roc_curve(y_trues=y_trues, y_preds=y_preds, global_step=self.epoch, tag="ROC_Curve_Test")
                         
             self.visualizer.plot_current_conf_matrix(self.epoch, performance["conf_matrix"], tag="Confusion_Matrix_Test")
+            
             self.visualizer.plot_performance(self.epoch, 0, performance, tag="Performance_Test")
             return performance
 
@@ -529,6 +530,9 @@ class Skipganomaly:
         self.visualizer.plot_roc_curve(y_trues=y_trues, y_preds=y_preds, global_step=1, tag="ROC_Curve_Inference")
         
         self.visualizer.plot_current_conf_matrix(1, performance["conf_matrix"], tag="Confusion_Matrix_Inference")
+        if self.opt.decision_threshold:
+            self.visualizer.plot_current_conf_matrix(2, performance["conf_matrix_man"])
+            self.visualizer.plot_histogram(y_trues=y_trues, y_preds=y_preds, threshold=performance["manual_threshold"], global_step=2, save_path=self.opt.outf + "histogram_inference.csv", tag="Histogram_Inference")
         self.visualizer.plot_performance(1, 0, performance, tag="Performance_Inference")
         
             
