@@ -463,7 +463,7 @@ class Skipganomaly:
             self.visualizer.plot_pr_curve(y_trues=y_trues, y_preds=y_preds, thresholds=thresholds, global_step=self.epoch, tag="PR_Curve_Test")
             self.visualizer.plot_roc_curve(y_trues=y_trues, y_preds=y_preds, global_step=self.epoch, tag="ROC_Curve_Test", save_path=os.path.join(self.opt.outf, "roc_test"+str(self.epoch)+".png"))
                         
-            self.visualizer.plot_current_conf_matrix(self.epoch, performance["conf_matrix"], tag="Confusion_Matrix_Test")
+            self.visualizer.plot_current_conf_matrix(self.epoch, performance["conf_matrix"], tag="Confusion_Matrix_Test", save_path=os.path.join(self.opt.outf, self.opt.phase+"_conf_matrix.png")
             
             self.visualizer.plot_performance(self.epoch, 0, performance, tag="Performance_Test")
             return performance
