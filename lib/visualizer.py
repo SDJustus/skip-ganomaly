@@ -98,8 +98,8 @@ class Visualizer():
         self.writer.add_scalars(tag if tag else "Performance Metrics", {k:v for k,v in performance.items() if ("conf_matrix" not in k and k != "Avg Run Time (ms/batch)")}, global_step=epoch)
             
         
-    def plot_current_conf_matrix(self, epoch, cm, tag=None):
-        plot = plot_confusion_matrix(cm, normalize=False, save_path=os.path.join(self.opt.outf, self.opt.phase+"_conf_matrix.png"))
+    def plot_current_conf_matrix(self, epoch, cm, tag=None, save_path=None):
+        plot = plot_confusion_matrix(cm, normalize=False, save_path=save_path)
         self.writer.add_figure(tag if tag else "Confusion Matrix", plot, global_step=epoch)
         
 
