@@ -188,7 +188,7 @@ def get_performance(y_trues, y_preds, manual_threshold):
         performance.update(man_dict)
     performance.update(recall_dict)
                                 
-    return performance, t, y_preds_man_thresh if manual_threshold else y_preds_auc_thresh
+    return performance, t, y_preds_man_thresh if manual_threshold else None, y_preds_auc_thresh
 
 def write_inference_result(file_names, y_preds, y_trues, outf):
     classification_result = {"tp": [], "fp": [], "tn": [], "fn": []}

@@ -454,7 +454,7 @@ class Skipganomaly:
             y_trues = self.gt_labels.cpu()
             y_preds = self.an_scores.cpu()
                 # Create data frame for scores and labels.
-            performance, thresholds, _ = get_performance(y_trues=y_trues, y_preds=y_preds, manual_threshold=self.opt.decision_threshold)
+            performance, thresholds, y_preds_man, y_preds_auc= get_performance(y_trues=y_trues, y_preds=y_preds, manual_threshold=self.opt.decision_threshold)
             with open(os.path.join(self.opt.outf, self.opt.phase +"_results.txt"), "a+") as f:
                 f.write(str(performance))
                 f.write("\n")
@@ -529,7 +529,7 @@ class Skipganomaly:
         print (f'Inference time / individual: {inf_time/len(y_trues)} secs')
         
             # Create data frame for scores and labels.
-        performance, thresholds, y_preds_after_threshold = get_performance(y_trues=y_trues, y_preds=y_preds, manual_threshold=self.opt.decision_threshold)
+        performance, thresholds, y_preds_man, y_preds_auc = get_performance(y_trues=y_trues, y_preds=y_preds, manual_threshold=self.opt.decision_threshold)
         with open(os.path.join(self.opt.outf, self.opt.phase +"_results.txt"), "w") as f:
             f.write(str(performance))
             f.close()
@@ -541,10 +541,11 @@ class Skipganomaly:
         if self.opt.decision_threshold:
             self.visualizer.plot_current_conf_matrix(2, performance["conf_matrix_man"], save_path=os.path.join(self.opt.outf, self.opt.phase+"_conf_matrix_man.png"))
             self.visualizer.plot_histogram(y_trues=y_trues, y_preds=y_preds, threshold=performance["manual_threshold"], global_step=2, save_path=os.path.join(self.opt.outf, "histogram_inference_man.png"), tag="Histogram_Inference")
+            write_inference_result(file_names=self.file_names, y_trues=y_trues, y_preds=y_preds_man,outf=os.path.join(self.opt.outf, "classification_result_man.json"))
         self.visualizer.plot_performance(1, 0, performance, tag="Performance_Inference")
         
             
-        write_inference_result(file_names=self.file_names, y_trues=y_trues, y_preds=y_preds_after_threshold,outf=os.path.join(self.opt.outf, "classification_result.json"))
+        write_inference_result(file_names=self.file_names, y_trues=y_trues, y_preds=y_preds_auc,outf=os.path.join(self.opt.outf, "classification_result.json"))
         ##
         # RETURN
         return performance
