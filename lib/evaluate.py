@@ -129,12 +129,10 @@ def get_performance(y_trues, y_preds, manual_threshold):
         
         precision, recall, _, _ = precision_recall_fscore_support(y_trues, y_preds_new, average="binary", pos_label=1)
         temp_dict[str(precision)] = recall
-        print("writing")
     p_dict = OrderedDict(sorted(temp_dict.items(), reverse=False))
     # interploation
     print("interpolation steps", len(list(p_dict.keys())))
     for i in range(len(list(p_dict.keys())), 0, -1):
-        print(i)
         try:
             if p_dict[list(p_dict.keys())[i-1]]>p_dict[list(p_dict.keys())[i-2]]:
                 p_dict[list(p_dict.keys())[i-2]] = p_dict[list(p_dict.keys())[i-1]]
@@ -142,12 +140,13 @@ def get_performance(y_trues, y_preds, manual_threshold):
             print("finished interpolation")
     p_dict = OrderedDict(sorted(p_dict.items(), reverse=True))
     for p in precisions:   
+        recall_dict["recall at pr="+str(p)] = 0.0
+        recall_dict["true pr="+str(p)] = 0.0
         for precision, recall in p_dict.items(): 
-            recall_dict["recall at pr="+str(p)] = 0.0
-            recall_dict["true pr="+str(p)] = 0.0
             if float(precision)>=0.998*p:
                 recall_dict["recall at pr="+str(p)] = recall
                 recall_dict["true pr="+str(p)] = float(precision)
+                print("writing")
                 continue
             else:
                 break
