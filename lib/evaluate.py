@@ -139,10 +139,12 @@ def get_performance(y_trues, y_preds, manual_threshold):
         except IndexError:
             print("finished interpolation")
     p_dict = OrderedDict(sorted(p_dict.items(), reverse=True))
+    print(p_dict)
     for p in precisions:   
         recall_dict["recall at pr="+str(p)] = 0.0
         recall_dict["true pr="+str(p)] = 0.0
         for precision, recall in p_dict.items(): 
+            print(precision, str(0.998*p))
             if float(precision)>=0.998*p:
                 recall_dict["recall at pr="+str(p)] = recall
                 recall_dict["true pr="+str(p)] = float(precision)
