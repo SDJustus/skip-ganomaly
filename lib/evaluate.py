@@ -146,7 +146,6 @@ def get_performance(y_trues, y_preds, manual_threshold):
             if float(precision)>=0.998*p:
                 recall_dict["recall at pr="+str(p)] = recall
                 recall_dict["true pr="+str(p)] = float(precision)
-                print("writing")
                 continue
             else:
                 break
