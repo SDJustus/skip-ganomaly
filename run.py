@@ -36,10 +36,13 @@ def main():
     if opt.phase == "inference":
         model.inference()
     else:
-        train_start = time.time()
-        model.train()
-        train_time = time.time() - train_start
-        print (f'Train time: {train_time} secs')
+        if opt.path_to_weights:
+            model.test()
+        else:
+            train_start = time.time()
+            model.train()
+            train_time = time.time() - train_start
+            print (f'Train time: {train_time} secs')
 
 if __name__ == '__main__':
     main()
