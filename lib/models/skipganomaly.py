@@ -397,9 +397,7 @@ class Skipganomaly:
         with torch.no_grad():
             # Load the weights of netg and netd.
             if self.opt.path_to_weights is not None:
-                if self.opt.epoch is None:
-                    raise ValueError("Need value for epoch of the weights")
-                self.load_weights(path=self.opt.path_to_weights, epoch=self.opt.epoch)
+                self.load_weights(path=self.opt.path_to_weights, is_best=True)
 
             self.opt.phase = 'test'
 
